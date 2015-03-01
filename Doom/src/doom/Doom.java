@@ -15,6 +15,7 @@ import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.*;
+import render.Camera;
 
 /**
  *
@@ -28,7 +29,8 @@ public class Doom {
     // We need to strongly reference callback instances.
     private GLFWErrorCallback errorCallback;
     private GLFWKeyCallback keyCallback;
-
+    private GLFWCursorPosCallback posCallback;
+    private GLFWMouseButtonCallback mouseCallback;
     // The window handle
     private long window;
 
@@ -52,12 +54,18 @@ public class Doom {
             // Release window and window callbacks
             glfwDestroyWindow(window);
             keyCallback.release();
+            mouseCallback.release();
+            posCallback.release();
         } finally {
             // Terminate GLFW and release the GLFWerrorfun
             glfwTerminate();
             errorCallback.release();
         }
     }
+    int WIDTH;
+    int HEIGHT;
+    private static double dX;
+    private static double dY;
 
     private void init() {
         // Setup an error callback. The default implementation
@@ -74,8 +82,8 @@ public class Doom {
         glfwWindowHint(GLFW_VISIBLE, GL_FALSE); // the window will stay hidden after creation
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); // the window will be resizable
 
-        int WIDTH = 300;
-        int HEIGHT = 300;
+        WIDTH = 600;
+        HEIGHT = 600;
 
         // Create the window
         window = glfwCreateWindow(WIDTH, HEIGHT, "Hello World!", NULL, NULL);
@@ -90,9 +98,40 @@ public class Doom {
                 if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                     glfwSetWindowShouldClose(window, GL_TRUE); // We will detect this in our rendering loop
                 }
+                if (action == GLFW_REPEAT || action == GLFW_PRESS) {
+                    if (key == GLFW_KEY_W) {
+
+                    } else if (key == GLFW_KEY_A) {
+
+                    } else if (key == GLFW_KEY_S) {
+
+                    } else if (key == GLFW_KEY_D) {
+
+                    }
+                }
+
             }
         });
+        //mouse position callback
+        glfwSetCursorPosCallback(window, posCallback = new GLFWCursorPosCallback() {
+            private double prevX;
+            private double prevY;
 
+            @Override
+            public void invoke(long window, double xpos, double ypos) {
+                Doom.dX = xpos-prevX ;
+                Doom.dY =ypos- prevY;
+                prevX = xpos;
+                prevY = ypos;
+            }
+        });
+        //mouse button callback
+        glfwSetMouseButtonCallback(window, mouseCallback = new GLFWMouseButtonCallback() {
+            @Override
+            public void invoke(long window, int button, int action, int mods) {
+
+            }
+        });
         // Get the resolution of the primary monitor
         ByteBuffer vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         // Center our window
@@ -112,6 +151,19 @@ public class Doom {
     }
 
     private void loop() {
+        //camera code
+        Camera camera = new Camera(0, 0, 0);
+
+        float dx = 0.0f;
+        float dy = 0.0f;
+        float dt = 0.0f; //length of frame
+        float lastTime = 0.0f; // when the last frame was
+        float time = 0.0f;
+
+        float mouseSensitivity = 0.1f;
+        float movementSpeed = 10.0f; //move 10 units per second
+
+        //mouse
         // This line is critical for LWJGL's interoperation with GLFW's
         // OpenGL context, or any context that is managed externally.
         // LWJGL detects the context that is current in the current thread,
@@ -124,21 +176,45 @@ public class Doom {
 
         GL11.glMatrixMode(GL11.GL_PROJECTION);
         GL11.glLoadIdentity();
+
         GL11.glOrtho(-10, 10, -10, 10, -5, 5);
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
-        int x = 0;
         // Run the rendering loop until the user has attempted to close
         // the window or has pressed the ESCAPE key.
         while (glfwWindowShouldClose(window) == GL_FALSE) {
+            //you would draw your scene here.
+            //mouse
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the framebuffer
-           
+
             glEnable(GL11.GL_CULL_FACE);
             glEnable(GL11.GL_DEPTH_TEST);
             glDepthFunc(GL_LESS);
-            GL11.glLoadIdentity();
+            //camera code
+            //time = Sys.getTime();
+            dt = (time - lastTime) / 1000.0f;
+            lastTime = time;
 
-            
-            GL11.glRotatef(x++, 1, 1, 1);
+            //distance in mouse movement from the last getDX() call.
+            dx = (float) Doom.dX;
+            //distance in mouse movement from the last getDY() call.
+            dy = (float) Doom.dY;
+
+            //reset
+            Doom.dX = 0;
+            Doom.dY = 0;
+            //controll camera yaw from x movement fromt the mouse
+            camera.yaw(dx * mouseSensitivity);
+            //controll camera pitch from y movement fromt the mouse
+            camera.pitch(dy * mouseSensitivity);
+            //camera.walkForward(movementSpeed*dt);
+
+            //set the modelview matrix back to the identity
+            GL11.glLoadIdentity();
+            //look through the camera before you draw anything
+            camera.lookThrough();
+
+
+            //GL11.glRotatef((float)deltaX, (float)deltaY, 1, 1);
             GL11.glBegin(GL11.GL_QUADS);
 
             GL11.glColor3f(1, 1, 0);
@@ -147,20 +223,19 @@ public class Doom {
             glVertex3f(-1.0f, 1.0f, 1.0f);          // Bottom Left Of The Quad (Top)
             glVertex3f(1.0f, 1.0f, 1.0f);          // Bottom Right Of The Quad (Top)
 
-           GL11.glColor3f(1, 1, 1);
+            GL11.glColor3f(1, 1, 1);
             glVertex3f(1.0f, -1.0f, 1.0f);          // Top Right Of The Quad (Bottom)
             glVertex3f(-1.0f, -1.0f, 1.0f);          // Top Left Of The Quad (Bottom)
             glVertex3f(-1.0f, -1.0f, -1.0f);          // Bottom Left Of The Quad (Bottom)
             glVertex3f(1.0f, -1.0f, -1.0f);          // Bottom Right Of The Quad (Bottom)
 
-            
             GL11.glColor3f(0, 1, 1);
             glVertex3f(1.0f, 1.0f, 1.0f);          // Top Right Of The Quad (Front)
             glVertex3f(-1.0f, 1.0f, 1.0f);          // Top Left Of The Quad (Front)
             glVertex3f(-1.0f, -1.0f, 1.0f);          // Bottom Left Of The Quad (Front)
             glVertex3f(1.0f, -1.0f, 1.0f);          // Bottom Right Of The Quad (Front)
 
-           GL11.glColor3f(1, 0, 1);
+            GL11.glColor3f(1, 0, 1);
             glVertex3f(1.0f, -1.0f, -1.0f);          // Bottom Left Of The Quad (Back)
             glVertex3f(-1.0f, -1.0f, -1.0f);          // Bottom Right Of The Quad (Back)
             glVertex3f(-1.0f, 1.0f, -1.0f);          // Top Right Of The Quad (Back)
@@ -177,11 +252,11 @@ public class Doom {
             glVertex3f(1.0f, 1.0f, 1.0f);          // Top Left Of The Quad (Right)
             glVertex3f(1.0f, -1.0f, 1.0f);          // Bottom Left Of The Quad (Right)
             glVertex3f(1.0f, -1.0f, -1.0f);          // Bottom Right Of The Quad (Right)
-            
+
             GL11.glEnd();
 
             //last thing to do
-           glfwSwapBuffers(window); // swap the color buffers
+            glfwSwapBuffers(window); // swap the color buffers
 
             // Poll for window events. The key callback above will only be
             // invoked during this call.
