@@ -32,35 +32,35 @@ public class Cube {
             pos.x, pos.y, pos.z, color.x, color.y, color.z,
             pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z,
             pos.x, pos.y + size, pos.z, color.x, color.y, color.z,
-            //  another
+            //another
             pos.x + size, pos.y, pos.z, color.x, color.y, color.z,
             pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z,
             pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z,
             pos.x + size, pos.y, pos.z, color.x, color.y, color.z,
             pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z,
             pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z,
-            //       another
+            //another
             pos.x, pos.y, pos.z, color.x, color.y, color.z,
             pos.x + size, pos.y, pos.z, color.x, color.y, color.z,
             pos.x, pos.y, pos.z + size, color.x, color.y, color.z,
             pos.x, pos.y, pos.z + size, color.x, color.y, color.z,
             pos.x + size, pos.y, pos.z, color.x, color.y, color.z,
             pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z,
-            //            
+            //another
             pos.x, pos.y + size, pos.z, color.x, color.y, color.z,
             pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z,
             pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z,
             pos.x, pos.y + size, pos.z, color.x, color.y, color.z,
             pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z,
             pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z, //     
-
+            //another
             pos.x, pos.y, pos.z, color.x, color.y, color.z,
             pos.x, pos.y + size, pos.z, color.x, color.y, color.z,
             pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z,
             pos.x, pos.y, pos.z, color.x, color.y, color.z,
             pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z,
             pos.x, pos.y, pos.z + size, color.x, color.y, color.z,
-            //
+            //another
             pos.x, pos.y, pos.z + size, color.x, color.y, color.z,
             pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z,
             pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z,

@@ -33,9 +33,9 @@ public class Camera {
     private float height;
 
     //the rotation around the Y axis of the camera
-    private float       yaw         = 0.0f;
+    private float yaw = 0.0f;
     //the rotation around the X axis of the camera
-    private float       pitch       = 0.0f;
+    private float pitch = 0.0f;
 
     public Camera(float height) {
         this.height = height;
@@ -48,7 +48,5 @@ public class Camera {
     public void setHeight(float height) {
         this.height = height;
     }
-
-    
 
 }

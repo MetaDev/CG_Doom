@@ -85,8 +85,9 @@ public class Game {
     public static final int TARGET_FPS = 75;
     public static final int TARGET_UPS = 30;
     public Player player;
+
     public Game() {
-        player= new Player(0,0,0,new Camera(0));
+        player = new Player(0, 0, 0, new Camera(0));
     }
 
     public void gameLoop(long window) {
@@ -137,14 +138,15 @@ public class Game {
         vao.bind();
         program.use();
 
-       // float lerpAngle = (1f - alpha) * previousAngle + alpha * angle;
+        // float lerpAngle = (1f - alpha) * previousAngle + alpha * angle;
         Matrix4f model = player.lookThrough();
         program.setUniform(uniModel, model);
 
         glDrawArrays(GL_TRIANGLES, 0, amountOfVertices);
     }
-   
-public int amountOfVertices;
+
+    public int amountOfVertices;
+
     public void enter() {
 
         // This line is critical for LWJGL's interoperation with GLFW's
@@ -157,17 +159,17 @@ public int amountOfVertices;
         /* Generate Vertex Array Object */
         vao = new VertexArrayObject();
         vao.bind();
-        Cube cube = new Cube(new Vector3f(-0.5f, -0.5f, -5f),1f, new Vector3f(0, 1, 0));
-        Cube cube1 = new Cube(new Vector3f(0.5f, 0.5f, -3f),1f, new Vector3f(1, 1, 0));
+        Cube cube = new Cube(new Vector3f(-0.5f, -0.5f, -5f), 1f, new Vector3f(0, 1, 0));
+        Cube cube1 = new Cube(new Vector3f(0.5f, 0.5f, -3f), 1f, new Vector3f(1, 1, 0));
         List<Cube> cubes = new ArrayList<>();
         cubes.add(cube);
         cubes.add(cube1);
-        int amountOfFloats = (cubes.size()*cubes.get(0).getData().length);
-        amountOfVertices=amountOfFloats/6;
+        int amountOfFloats = (cubes.size() * cubes.get(0).getData().length);
+        amountOfVertices = amountOfFloats / 6;
         /* Vertex data */
-        
+
         FloatBuffer vertices = BufferUtils.createFloatBuffer(amountOfFloats);
-        for(Cube c: cubes){
+        for (Cube c : cubes) {
             vertices.put(c.getData());
         }
         vertices.flip();
@@ -207,7 +209,7 @@ public int amountOfVertices;
 
         /* Set projection matrix to an orthographic projection */
         Matrix4f projection = Matrix4f.perspective(45f, ratio, 0.1f, 10f);
-        
+
         int uniProjection = program.getUniformLocation("projection");
         program.setUniform(uniProjection, projection);
     }
