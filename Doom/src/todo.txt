@@ -1,4 +1,5 @@
 render correctly independent of windows size
-render a board
-render some cubes on the board
-implement camera and walking functionality
+
+
+optimise for high frame rate
+render textures
