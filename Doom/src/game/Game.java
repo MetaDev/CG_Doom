@@ -18,20 +18,23 @@ import math.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
 import static org.lwjgl.glfw.GLFW.glfwPollEvents;
+import static org.lwjgl.glfw.GLFW.glfwSetWindowTitle;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
 import org.lwjgl.opengl.GL11;
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL11.glClear;
+import static org.lwjgl.opengl.GL11.glClearColor;
 import static org.lwjgl.opengl.GL11.glDrawArrays;
+import static org.lwjgl.opengl.GL11.glEnable;
 import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
 import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
 import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
 import org.lwjgl.opengl.GLContext;
-import render.Camera;
 import render.Cube;
 
 /**
@@ -77,16 +80,18 @@ public class Game {
     private float previousAngle = 0f;
     private float angle = 0f;
     private final float angelPerSecond = 3f;
-    private boolean running = true;
     /**
      * Used for timing calculations.
      */
     protected Timer timer = new Timer();
-    public static final int TARGET_FPS = 75;
-    public static final int TARGET_UPS = 30;
-    public Player player;
+    public static final int TARGET_FPS = 60;
+    public static final int TARGET_UPS = 60;
+    public Board board;
     public Game() {
-        player= new Player(0,0,0,new Camera(0));
+       board=new Board();
+       Tile root = board.root;
+       float rootSize=root.getAbsSize();
+       
     }
 
     public void gameLoop(long window) {
@@ -94,7 +99,7 @@ public class Game {
         float accumulator = 0f;
         float interval = 1f / TARGET_UPS;
         float alpha;
-        while (running && (glfwWindowShouldClose(window) == GL_FALSE)) {
+        while ((glfwWindowShouldClose(window) == GL_FALSE)) {
 
             /* Get delta time and update the accumulator */
             delta = timer.getDelta();
@@ -111,40 +116,69 @@ public class Game {
             }
 
             /* Calculate alpha value for interpolation */
-            alpha = accumulator / interval;
+            //alpha = accumulator / interval;
 
             /* Render game and update timer FPS */
-            update(alpha);
-            render(alpha);
+            render();
             timer.updateFPS();
 
             /* Update timer */
             timer.update();
             //mandatory after render
             glfwSwapBuffers(window); // swap the color buffers
+            //show FPS and UPS
+            glfwSetWindowTitle(window, "FPS: " + timer.getFPS() + " UPS: " + timer.getUPS());
 
         }
     }
 
-    private void update(float delta) {
-        previousAngle = angle;
-        angle += delta * angelPerSecond;
-    }
-
-    private void render(float alpha) {
-        glClear(GL_COLOR_BUFFER_BIT);
-
+    private void render() {
+       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+       //very important!! which face is hidden by other, HUH!?
+        glEnable(GL11.GL_DEPTH_TEST);
         vao.bind();
         program.use();
 
-       // float lerpAngle = (1f - alpha) * previousAngle + alpha * angle;
-        Matrix4f model = player.lookThrough();
+        // float lerpAngle = (1f - alpha) * previousAngle + alpha * angle;
+        Matrix4f model = board.player.lookThrough();
         program.setUniform(uniModel, model);
 
         glDrawArrays(GL_TRIANGLES, 0, amountOfVertices);
+         //glDrawArrays(GL11.GL_LINE_LOOP, 0, amountOfVertices);
     }
-   
-public int amountOfVertices;
+
+    public void resolutionChanged() {
+        /* Get width and height for calculating the ratio */
+        long window = GLFW.glfwGetCurrentContext();
+        IntBuffer width = BufferUtils.createIntBuffer(1);
+        IntBuffer height = BufferUtils.createIntBuffer(1);
+        GLFW.glfwGetFramebufferSize(window, width, height);
+        float ratio = width.get() / (float) height.get();
+
+        Matrix4f projection = Matrix4f.perspective(90f, ratio, 0.1f, 100f);
+
+        int uniProjection = program.getUniformLocation("projection");
+        program.setUniform(uniProjection, projection);
+    }
+    public int amountOfVertices;
+
+    public void cubesToDraw(List<Cube> cubes) {
+        int amountOfFloats = (cubes.size() * cubes.get(0).getData().length);
+        amountOfVertices = amountOfFloats / 6;
+        /* Vertex data */
+
+        FloatBuffer vertices = BufferUtils.createFloatBuffer(amountOfFloats);
+        for (Cube c : cubes) {
+            vertices.put(c.getData());
+        }
+        vertices.flip();
+
+        /* Generate Vertex Buffer Object */
+        vbo = new VertexBufferObject();
+        vbo.bind(GL_ARRAY_BUFFER);
+        vbo.uploadData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+    }
+
     public void enter() {
 
         // This line is critical for LWJGL's interoperation with GLFW's
@@ -157,25 +191,20 @@ public int amountOfVertices;
         /* Generate Vertex Array Object */
         vao = new VertexArrayObject();
         vao.bind();
-        Cube cube = new Cube(new Vector3f(-0.5f, -0.5f, -5f),1f, new Vector3f(0, 1, 0));
-        Cube cube1 = new Cube(new Vector3f(0.5f, 0.5f, -3f),1f, new Vector3f(1, 1, 0));
-        List<Cube> cubes = new ArrayList<>();
-        cubes.add(cube);
-        cubes.add(cube1);
-        int amountOfFloats = (cubes.size()*cubes.get(0).getData().length);
-        amountOfVertices=amountOfFloats/6;
-        /* Vertex data */
         
-        FloatBuffer vertices = BufferUtils.createFloatBuffer(amountOfFloats);
-        for(Cube c: cubes){
-            vertices.put(c.getData());
-        }
-        vertices.flip();
-
-        /* Generate Vertex Buffer Object */
-        vbo = new VertexBufferObject();
-        vbo.bind(GL_ARRAY_BUFFER);
-        vbo.uploadData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+        List<Cube> cubes = new ArrayList<>();
+       
+        //cubes.add(cube);
+        cubes.add(new Cube(new Vector3f(-5f, -5f, -10f), 5f, new Vector3f(0, 1, 0)));
+        cubes.add(new Cube(new Vector3f(-5f, -5f, -5f), 5f, new Vector3f(0, 1, 1)));
+        cubes.add(new Cube(new Vector3f(0f, -5f, -5f), 5f, new Vector3f(1, 0, 1)));
+        //cubes.add(new Cube(new Vector3f(0f, -5f, -10f), 5f, new Vector3f(0, 0, 1)));
+        cubesToDraw(board.getBoardAsCubes());
+        //cubesToDraw(cubes);
+        
+        
+        
+        
         /* Load shaders */
         vertexShader = new Shader(GL_VERTEX_SHADER, vertexSource);
         fragmentShader = new Shader(GL_FRAGMENT_SHADER, fragmentSource);
@@ -205,11 +234,12 @@ public int amountOfVertices;
         GLFW.glfwGetFramebufferSize(window, width, height);
         float ratio = width.get() / (float) height.get();
 
-        /* Set projection matrix to an orthographic projection */
-        Matrix4f projection = Matrix4f.perspective(45f, ratio, 0.1f, 10f);
-        
+        Matrix4f projection = Matrix4f.perspective(90f, ratio, 0.1f, 100f);
+
         int uniProjection = program.getUniformLocation("projection");
         program.setUniform(uniProjection, projection);
+
+        glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     }
 
     public void exit() {
@@ -235,11 +265,9 @@ public int amountOfVertices;
         program.pointVertexAttribute(colAttrib, 3, 6 * Float.BYTES, 3 * Float.BYTES);
     }
 
-    public void render(long window) {
+   
 
-    }
-
-    //continous update
+    //continous update of the world
     public void update() {
 
     }

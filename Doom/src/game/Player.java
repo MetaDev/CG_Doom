@@ -19,7 +19,7 @@ public class Player {
     private float rotation;
     private Camera camera;
     private Vector3f eye;
-
+    private float speed=5;
     public float getX() {
         return x;
     }
@@ -71,13 +71,14 @@ public class Player {
        //rotate around z axis for player rotation
        Matrix4f rot = Matrix4f.rotate(rotation, 0.0f,0f, 1f);
         //translate to the position vector's location
-         Matrix4f translate = Matrix4f.translate(-x, 0, y);
-         return translate.multiply(pitch.multiply(yaw));
+       Vector3f eye=getEye();
+         Matrix4f translate = Matrix4f.translate(eye.x,eye.y,eye.z);
+         return pitch.multiply(yaw).multiply(translate);
     }
     public Vector3f getEye(){
-        eye.x=x;
-        eye.y=y;
-        eye.z=camera.getHeight();
+        eye.x=-x;
+        eye.y=-camera.getHeight();
+        eye.z=y;
         return eye;
     }
     public Vector3f getTarget(){
@@ -88,8 +89,20 @@ public class Player {
 	eye.x - (float) (Math.cos(Math.toRadians(pitch)) * Math.sin(Math.toRadians(yaw))),
 	eye.y + (float) (Math.sin(Math.toRadians(pitch))),
 	eye.z + (float) (Math.cos(Math.toRadians(pitch)) * Math.cos(Math.toRadians(yaw)))
-);
+        );
         return target;
+    }
+    public void left(){
+        x-=0.01f*speed;
+    }
+    public void right(){
+        x+=0.01f*speed;
+    }
+    public void forward(){
+         y+=0.01f*speed;
+    }
+    public void backward(){
+         y-=0.01f*speed;
     }
     
 }

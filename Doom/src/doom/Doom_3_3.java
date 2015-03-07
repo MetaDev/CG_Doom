@@ -34,6 +34,7 @@ public class Doom_3_3 {
     private GLFWKeyCallback keyCallback;
     private GLFWCursorPosCallback posCallback;
     private GLFWMouseButtonCallback mouseCallback;
+    private GLFWWindowSizeCallback windowSizeCallback;
 
     // The window handle
     private long window;
@@ -66,6 +67,9 @@ public class Doom_3_3 {
         // Terminate GLFW and release the GLFWerrorfun
         glfwTerminate();
         errorCallback.release();
+        windowSizeCallback.release();
+        posCallback.release();
+        mouseCallback.release();
         game.exit();
 
     }
@@ -103,23 +107,23 @@ public class Doom_3_3 {
                 if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                     glfwSetWindowShouldClose(window, GL_TRUE); // We will detect this in our rendering loop
                 }
-                if (action == GLFW_PRESS || action==GLFW_REPEAT) {
+                if (action == GLFW_PRESS || action == GLFW_REPEAT) {
                     switch (key) {
                         case GLFW_KEY_W:
                             //UP 
-                            game.player.setY(game.player.getY() + 0.1f);
+                            game.board.player.forward();
                             break;
                         case GLFW_KEY_S:
                             //Down
-                            game.player.setY(game.player.getY() - 0.1f);
+                            game.board.player.backward();
                             break;
                         case GLFW_KEY_D:
                             //RIGHT 
-                            game.player.setX(game.player.getX() + 0.1f);
+                            game.board.player.right();
                             break;
                         case GLFW_KEY_A:
                             //left
-                            game.player.setX(game.player.getX() - 0.1f);
+                            game.board.player.left();
                             break;
 
                     }
@@ -134,6 +138,14 @@ public class Doom_3_3 {
 
             }
         });
+          //set resize callback
+        glfwSetWindowSizeCallback(window, windowSizeCallback = new GLFWWindowSizeCallback() {
+
+            @Override
+            public void invoke(long window, int width, int height) {
+                game.resolutionChanged();
+            }
+        });
         // Get the resolution of the primary monitor
         ByteBuffer vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
         // Center our window
@@ -145,13 +157,13 @@ public class Doom_3_3 {
 
         //mouse position callback
         glfwSetCursorPosCallback(window, posCallback = new GLFWCursorPosCallback() {
-            private float mouseSensitivy=0.1f;
+            private float mouseSensitivy = 0.1f;
 
             @Override
             public void invoke(long window, double xpos, double ypos) {
                 //yaw and pitch are zero at center of window
-                game.player.getCamera().setYaw((width/2-(float)xpos)*mouseSensitivy);
-                game.player.getCamera().setPitch((height/2-(float)ypos)*mouseSensitivy);
+                game.board.player.getCamera().setYaw((width / 2 - (float) xpos) * mouseSensitivy);
+                game.board.player.getCamera().setPitch((height / 2 - (float) ypos) * mouseSensitivy);
             }
         });
         // Make the OpenGL context current

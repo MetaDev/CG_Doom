@@ -1,5 +1,9 @@
-render correctly independent of windows size
-
-
+implement cube shooter
+rotate player by using bounding 
+implement board navaigatino, in tile smooth movement tile teleportation
 optimise for high frame rate
+update cubes method that reloads all cubes
+draw check board
+implement teleport
+implement "shade planes"
 render textures
