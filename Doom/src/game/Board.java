@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import math.Vector3f;
-import render.Camera;
 import render.Cube;
 
 /**

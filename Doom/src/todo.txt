@@ -1,9 +1,28 @@
+implement texture
+impelement light
 implement cube shooter
-rotate player by using bounding 
-implement board navaigatino, in tile smooth movement tile teleportation
-optimise for high frame rate
+implement board navaigatino, in tile movement tile teleportation, implement cube walking with bounds
+
+divide camera and player transformation matrices
+
+scale view by tile size
+
+make rotation and movement smooth (lerp)
+
+enforce landscape (with/height>1) for window
+walk slower on bigger tiles (same crossover time)
+
 update cubes method that reloads all cubes
-draw check board
-implement teleport
-implement "shade planes"
+
+implement "shade planes": totaly dark. light can be made by shooting it's a ray that spans the while plane and fades over time
+the texture of the plane can be chosen by the player and can only be seen of lit up.
+
 render textures
+
+ only lock a player in a cube if the cube is lower than, yours
+the image for both shade planes can be chosen by the user-> could be tactical advantage
+let the user create it's own V8^3 (3D 8x8 matrix) as avatar, implement shooting and camera height accordingly
+increase the width of the rotation bound with increasing abs fraction of position
+until rotation is instant
+
+make

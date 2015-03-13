@@ -6,25 +6,17 @@
 package doom;
 
 import game.Game;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.Sys;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 
 import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.lwjgl.LWJGLUtil;
 
 import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.glfw.GLFW.glfwGetCursorPos;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15.*;
-import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 public class Doom_3_3 {
@@ -38,8 +30,8 @@ public class Doom_3_3 {
 
     // The window handle
     private long window;
-    private int width = 400;
-    private int height = 300;
+    public int windowWidth = 400;
+    public int windowHeight = 300;
 
     private static void setNatives() {
         if (System.getProperty("org.lwjgl.librarypath") == null) {
@@ -73,8 +65,7 @@ public class Doom_3_3 {
         game.exit();
 
     }
-    private static double dX;
-    private static double dY;
+
 
     private void initWindow() {
         // Setup an error callback. The default implementation
@@ -95,7 +86,7 @@ public class Doom_3_3 {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
         // Create the window
-        window = glfwCreateWindow(width, height, "Hello World!", NULL, NULL);
+        window = glfwCreateWindow(windowWidth, windowHeight, "Hello World!", NULL, NULL);
         if (window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
@@ -138,12 +129,14 @@ public class Doom_3_3 {
 
             }
         });
-          //set resize callback
+        //set resize callback
         glfwSetWindowSizeCallback(window, windowSizeCallback = new GLFWWindowSizeCallback() {
 
             @Override
             public void invoke(long window, int width, int height) {
-                game.resolutionChanged();
+                windowWidth=width;
+                windowHeight=height;
+                game.resolutionChanged(windowWidth,windowHeight);
             }
         });
         // Get the resolution of the primary monitor
@@ -151,8 +144,8 @@ public class Doom_3_3 {
         // Center our window
         glfwSetWindowPos(
                 window,
-                (GLFWvidmode.width(vidmode) - width) / 2,
-                (GLFWvidmode.height(vidmode) - height) / 2
+                (GLFWvidmode.width(vidmode) - windowWidth) / 2,
+                (GLFWvidmode.height(vidmode) - windowHeight) / 2
         );
 
         //mouse position callback
@@ -161,9 +154,8 @@ public class Doom_3_3 {
 
             @Override
             public void invoke(long window, double xpos, double ypos) {
-                //yaw and pitch are zero at center of window
-                game.board.player.getCamera().setYaw((width / 2 - (float) xpos) * mouseSensitivy);
-                game.board.player.getCamera().setPitch((height / 2 - (float) ypos) * mouseSensitivy);
+               game.board.player.setMousePos((float)xpos,(float) ypos, windowWidth, windowHeight);
+
             }
         });
         // Make the OpenGL context current

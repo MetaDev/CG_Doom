@@ -85,13 +85,14 @@ public class Game {
      */
     protected Timer timer = new Timer();
     public static final int TARGET_FPS = 60;
-    public static final int TARGET_UPS = 60;
+    public static final int TARGET_UPS = 30;
     public Board board;
+
     public Game() {
-       board=new Board();
-       Tile root = board.root;
-       float rootSize=root.getAbsSize();
-       
+        board = new Board();
+        Tile root = board.root;
+        float rootSize = root.getAbsSize();
+
     }
 
     public void gameLoop(long window) {
@@ -110,13 +111,14 @@ public class Game {
 
             /* Update game and timer UPS if enough time has passed */
             while (accumulator >= interval) {
+                //fixed loop
                 update();
                 timer.updateUPS();
                 accumulator -= interval;
             }
 
             /* Calculate alpha value for interpolation */
-            //alpha = accumulator / interval;
+            alpha = accumulator / interval;
 
             /* Render game and update timer FPS */
             render();
@@ -133,8 +135,8 @@ public class Game {
     }
 
     private void render() {
-       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
-       //very important!! which face is hidden by other, HUH!?
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //very important!! which face is hidden by other, HUH!?
         glEnable(GL11.GL_DEPTH_TEST);
         vao.bind();
         program.use();
@@ -144,16 +146,12 @@ public class Game {
         program.setUniform(uniModel, model);
 
         glDrawArrays(GL_TRIANGLES, 0, amountOfVertices);
-         //glDrawArrays(GL11.GL_LINE_LOOP, 0, amountOfVertices);
+        //glDrawArrays(GL11.GL_LINE_LOOP, 0, amountOfVertices);
     }
 
-    public void resolutionChanged() {
-        /* Get width and height for calculating the ratio */
-        long window = GLFW.glfwGetCurrentContext();
-        IntBuffer width = BufferUtils.createIntBuffer(1);
-        IntBuffer height = BufferUtils.createIntBuffer(1);
-        GLFW.glfwGetFramebufferSize(window, width, height);
-        float ratio = width.get() / (float) height.get();
+    public void resolutionChanged(float width, float height) {
+       
+        float ratio = width / height;
 
         Matrix4f projection = Matrix4f.perspective(90f, ratio, 0.1f, 100f);
 
@@ -191,9 +189,9 @@ public class Game {
         /* Generate Vertex Array Object */
         vao = new VertexArrayObject();
         vao.bind();
-        
+
         List<Cube> cubes = new ArrayList<>();
-       
+
         //cubes.add(cube);
         cubes.add(new Cube(new Vector3f(-5f, -5f, -10f), 5f, new Vector3f(0, 1, 0)));
         cubes.add(new Cube(new Vector3f(-5f, -5f, -5f), 5f, new Vector3f(0, 1, 1)));
@@ -201,10 +199,7 @@ public class Game {
         //cubes.add(new Cube(new Vector3f(0f, -5f, -10f), 5f, new Vector3f(0, 0, 1)));
         cubesToDraw(board.getBoardAsCubes());
         //cubesToDraw(cubes);
-        
-        
-        
-        
+
         /* Load shaders */
         vertexShader = new Shader(GL_VERTEX_SHADER, vertexSource);
         fragmentShader = new Shader(GL_FRAGMENT_SHADER, fragmentSource);
@@ -265,11 +260,10 @@ public class Game {
         program.pointVertexAttribute(colAttrib, 3, 6 * Float.BYTES, 3 * Float.BYTES);
     }
 
-   
-
+  
     //continous update of the world
     public void update() {
-
+       board.player.update(TARGET_UPS);
     }
 
     public void input() {

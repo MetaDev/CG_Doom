@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package render;
+package game;
 
 import math.Matrix4f;
 import math.Vector3f;
@@ -33,9 +33,9 @@ public class Camera {
     private float height;
 
     //the rotation around the Y axis of the camera
-    private float       yaw         = 0.0f;
+    private float yaw = 0.0f;
     //the rotation around the X axis of the camera
-    private float       pitch       = 0.0f;
+    private float pitch = 0.0f;
 
     public Camera(float height) {
         this.height = height;
@@ -49,6 +49,11 @@ public class Camera {
         this.height = height;
     }
 
-    
+    public void pitch(float amount) {
+        pitch += amount;
+    }
+    public void yaw(float amount){
+        yaw+=amount;
+    }
 
 }
