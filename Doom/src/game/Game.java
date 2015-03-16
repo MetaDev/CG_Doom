@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lwjglUtil.Shader;
 import lwjglUtil.ShaderProgram;
+import lwjglUtil.Texture;
 import lwjglUtil.VertexArrayObject;
 import lwjglUtil.VertexBufferObject;
 import math.Matrix4f;
@@ -26,11 +27,13 @@ import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
+import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
 import static org.lwjgl.opengl.GL11.glClear;
 import static org.lwjgl.opengl.GL11.glClearColor;
-import static org.lwjgl.opengl.GL11.glDrawArrays;
+import static org.lwjgl.opengl.GL11.glDrawElements;
 import static org.lwjgl.opengl.GL11.glEnable;
 import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
+import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
 import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
 import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
@@ -43,35 +46,10 @@ import render.Cube;
  */
 public class Game {
 
-    private final CharSequence vertexSource
-            = "#version 150 core\n"
-            + "\n"
-            + "in vec3 position;\n"
-            + "in vec3 color;\n"
-            + "\n"
-            + "out vec3 vertexColor;\n"
-            + "\n"
-            + "uniform mat4 model;\n"
-            + "uniform mat4 view;\n"
-            + "uniform mat4 projection;\n"
-            + "\n"
-            + "void main() {\n"
-            + "    vertexColor = color;\n"
-            + "    mat4 mvp = projection * view * model;\n"
-            + "    gl_Position = mvp * vec4(position, 1.0);\n"
-            + "}";
-    private final CharSequence fragmentSource
-            = "#version 150 core\n"
-            + "\n"
-            + "in vec3 vertexColor;\n"
-            + "\n"
-            + "out vec4 fragColor;\n"
-            + "\n"
-            + "void main() {\n"
-            + "    fragColor = vec4(vertexColor, 1.0);\n"
-            + "}";
     private VertexArrayObject vao;
     private VertexBufferObject vbo;
+
+    private VertexBufferObject ebo;
     private Shader vertexShader;
     private Shader fragmentShader;
     private ShaderProgram program;
@@ -139,18 +117,22 @@ public class Game {
         //very important!! which face is hidden by other, HUH!?
         glEnable(GL11.GL_DEPTH_TEST);
         vao.bind();
+        texture.bind();
         program.use();
 
-        // float lerpAngle = (1f - alpha) * previousAngle + alpha * angle;
         Matrix4f model = board.player.lookThrough();
         program.setUniform(uniModel, model);
-
-        glDrawArrays(GL_TRIANGLES, 0, amountOfVertices);
-        //glDrawArrays(GL11.GL_LINE_LOOP, 0, amountOfVertices);
+        //draw shade plane
+        switchTexture(shadePlaneTexture);
+        glDrawElements(GL_TRIANGLES, 2*Cube.getNrOfElements(), GL_UNSIGNED_INT, 0);
+        //draw board
+        switchTexture(color);
+        glDrawElements(GL_TRIANGLES, (nrOfCubes)*Cube.getNrOfElements(), GL_UNSIGNED_INT,  2*Cube.getNrOfElements());
     }
 
+    
     public void resolutionChanged(float width, float height) {
-       
+
         float ratio = width / height;
 
         Matrix4f projection = Matrix4f.perspective(90f, ratio, 0.1f, 100f);
@@ -158,11 +140,12 @@ public class Game {
         int uniProjection = program.getUniformLocation("projection");
         program.setUniform(uniProjection, projection);
     }
-    public int amountOfVertices;
+    public int nrOfCubes;
 
     public void cubesToDraw(List<Cube> cubes) {
-        int amountOfFloats = (cubes.size() * cubes.get(0).getData().length);
-        amountOfVertices = amountOfFloats / 6;
+        nrOfCubes=cubes.size();
+        //calculate amount of floats of all cubes
+        int amountOfFloats = (nrOfCubes * Cube.getNrOfFloats());
         /* Vertex data */
 
         FloatBuffer vertices = BufferUtils.createFloatBuffer(amountOfFloats);
@@ -175,71 +158,111 @@ public class Game {
         vbo = new VertexBufferObject();
         vbo.bind(GL_ARRAY_BUFFER);
         vbo.uploadData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
+        
+        /* Element data */
+        IntBuffer elements = BufferUtils.createIntBuffer(Cube.getNrOfElements()*cubes.size());
+        int cubeIndex=0;
+        for (Cube c : cubes) {
+            elements.put(c.getVertexIndices(cubeIndex));
+            cubeIndex++;
+        }
+        elements.flip();
+
+        /* Generate Element Buffer Object */
+        ebo = new VertexBufferObject();
+        ebo.bind(GL_ELEMENT_ARRAY_BUFFER);
+        ebo.uploadData(GL_ELEMENT_ARRAY_BUFFER, elements, GL_STATIC_DRAW);
+
+        //set amount of cubes rendered with which texture
+        
     }
+    private Texture texture;
+    private Texture color;
+    private Texture shadePlaneTexture;
 
+    private void switchTexture(Texture tex){
+        texture=tex;
+        texture.bind();
+        
+    }
+    
     public void enter() {
-
         // This line is critical for LWJGL's interoperation with GLFW's
         // OpenGL context, or any context that is managed externally.
         // LWJGL detects the context that is current in the current thread,
         // creates the ContextCapabilities instance and makes the OpenGL
         // bindings available for use.
         GLContext.createFromCurrent();
-        System.out.println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION));
+          /* Get width and height of framebuffer */
+        long window = GLFW.glfwGetCurrentContext();
+        IntBuffer widthBuffer = BufferUtils.createIntBuffer(1);
+        IntBuffer heightBuffer = BufferUtils.createIntBuffer(1);
+        GLFW.glfwGetFramebufferSize(window, widthBuffer, heightBuffer);
+        int width = widthBuffer.get();
+        int height = heightBuffer.get();
+
+        /* Create textures */
+        color = Texture.loadTexture("resources/white.png");
+        shadePlaneTexture=Texture.loadTexture("resources/example.png");
+        switchTexture(color);
+
         /* Generate Vertex Array Object */
         vao = new VertexArrayObject();
         vao.bind();
 
+     
+
         List<Cube> cubes = new ArrayList<>();
-
-        //cubes.add(cube);
-        cubes.add(new Cube(new Vector3f(-5f, -5f, -10f), 5f, new Vector3f(0, 1, 0)));
-        cubes.add(new Cube(new Vector3f(-5f, -5f, -5f), 5f, new Vector3f(0, 1, 1)));
-        cubes.add(new Cube(new Vector3f(0f, -5f, -5f), 5f, new Vector3f(1, 0, 1)));
-        //cubes.add(new Cube(new Vector3f(0f, -5f, -10f), 5f, new Vector3f(0, 0, 1)));
-        cubesToDraw(board.getBoardAsCubes());
-        //cubesToDraw(cubes);
-
+        //add ceiling and floor 
+        cubes.add(new Cube(new Vector3f(board.root.getAbsX(), -(10f+board.root.getAbsSize()), board.root.getAbsY()), board.root.getAbsSize(), new Vector3f(1, 1, 1)));
+        cubes.add(new Cube(new Vector3f(board.root.getAbsX(), 10f, board.root.getAbsY()), board.root.getAbsSize(), new Vector3f(1, 1, 1)));
+        //add board to cubes
+        cubes.addAll(board.getBoardAsCubes());
+         cubesToDraw(cubes);
         /* Load shaders */
-        vertexShader = new Shader(GL_VERTEX_SHADER, vertexSource);
-        fragmentShader = new Shader(GL_FRAGMENT_SHADER, fragmentSource);
+        vertexShader = Shader.loadShader(GL_VERTEX_SHADER, "resources/vertex.glsl");
+        fragmentShader = Shader.loadShader(GL_FRAGMENT_SHADER, "resources/fragment.glsl");
 
         /* Create shader program */
         program = new ShaderProgram();
         program.attachShader(vertexShader);
         program.attachShader(fragmentShader);
-        //program.bindFragmentDataLocation(0, "fragColor");
+        program.bindFragmentDataLocation(0, "fragColor");
         program.link();
         program.use();
 
         specifyVertexAttributes();
 
-        /* Get uniform location for the model matrix */
+       
+        /* Set texture uniform */
+        int uniTex = program.getUniformLocation("texImage");
+        program.setUniform(uniTex, 0);
+        /* Set model matrix to identity matrix */
+        Matrix4f model = new Matrix4f();
         uniModel = program.getUniformLocation("model");
+        program.setUniform(uniModel, model);
 
         /* Set view matrix to identity matrix */
         Matrix4f view = new Matrix4f();
         int uniView = program.getUniformLocation("view");
         program.setUniform(uniView, view);
 
-        /* Get width and height for calculating the ratio */
-        long window = GLFW.glfwGetCurrentContext();
-        IntBuffer width = BufferUtils.createIntBuffer(1);
-        IntBuffer height = BufferUtils.createIntBuffer(1);
-        GLFW.glfwGetFramebufferSize(window, width, height);
-        float ratio = width.get() / (float) height.get();
+        /* Set projection matrix to an orthographic projection */
+        float ratio = width / height;
 
         Matrix4f projection = Matrix4f.perspective(90f, ratio, 0.1f, 100f);
 
         int uniProjection = program.getUniformLocation("projection");
         program.setUniform(uniProjection, projection);
-
+        
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     }
 
     public void exit() {
         vao.delete();
         vbo.delete();
+        ebo.delete();
+        color.delete();
         vertexShader.delete();
         fragmentShader.delete();
         program.delete();
@@ -252,18 +275,22 @@ public class Game {
         /* Specify Vertex Pointer */
         int posAttrib = program.getAttributeLocation("position");
         program.enableVertexAttribute(posAttrib);
-        program.pointVertexAttribute(posAttrib, 3, 6 * Float.BYTES, 0);
+        program.pointVertexAttribute(posAttrib, 3, 8 * Float.BYTES, 0);
 
         /* Specify Color Pointer */
         int colAttrib = program.getAttributeLocation("color");
         program.enableVertexAttribute(colAttrib);
-        program.pointVertexAttribute(colAttrib, 3, 6 * Float.BYTES, 3 * Float.BYTES);
+        program.pointVertexAttribute(colAttrib, 3, 8 * Float.BYTES, 3 * Float.BYTES);
+
+        /* Specify Texture Pointer */
+        int texAttrib = program.getAttributeLocation("texcoord");
+        program.enableVertexAttribute(texAttrib);
+        program.pointVertexAttribute(texAttrib, 2, 8 * Float.BYTES, 6 * Float.BYTES);
     }
 
-  
     //continous update of the world
     public void update() {
-       board.player.update(TARGET_UPS);
+        board.player.update(TARGET_UPS);
     }
 
     public void input() {
