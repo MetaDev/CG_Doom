@@ -8,26 +8,32 @@ package game;
 import math.Matrix4f;
 import math.Vector2f;
 import math.Vector3f;
+import math.Vector4f;
+import render.Cube;
 
 /**
  *
  * @author Harald
  */
 public class Player {
+//internally x, y, z are a logical axis, for the drawing coordinates a conversion is required
 
     private float x;
     private float y;
+    private float z;
     private float rotation;
     private Camera camera;
-    private Vector3f eye;
+    //the up vector changes the axis of the player
+    private Vector3f up = new Vector3f(1, 1, -1);
     private float movementSpeed = 0.1f;
     private float rotationSpeed = 50f;
     private float rotationIncrease = 0;
-    //scalar of the screen height (min(width,height))
-    //private float nonRotatingFrameWidth = 1;
+    //tile containing the players movement
+    private Tile tile;
+    private Board board;
 
-    public float getX() {
-        return x;
+    public void flipUp() {
+
     }
 
     public void update(int updateRate) {
@@ -36,21 +42,19 @@ public class Player {
         rotation = rotation % 360;
     }
 
-    public void setX(float x) {
-        this.x = x;
+    public Tile getTile() {
+        return tile;
     }
 
-    public float getY() {
-        return y;
-    }
-
-    public void setY(float y) {
-        this.y = y;
+    public void setTile(Tile tile) {
+        this.tile = tile;
     }
 
     public float getRotation() {
         return rotation;
     }
+    private float mouseXtarget;
+    private float mouseYtarget;
 
     public void setMousePos(float xpos, float ypos, float width, float height) {
         //when mouse position chagens start by setting the rotation increase to 0
@@ -59,8 +63,11 @@ public class Player {
         ypos = Math.min(height, Math.max(0, ypos));
         //only move if inside window frame
         //yaw and pitch are zero at center of window
-        float relX = (width / 2 - (float) xpos);
-        float relY = (height / 2 - (float) ypos);
+        float relX = (width / 2) - (float) xpos;
+        float relY = (height / 2) - (float) ypos;
+        //save normalised center position for targetting
+        mouseXtarget = (2 * xpos) / width - 1;
+        mouseYtarget = 1 - (2 * ypos) / height;
         float boundStart = (width - height) / 2;
         float boundEnd = height + boundStart;
         float pitch = (relY / (height / 2)) * 90;
@@ -107,47 +114,61 @@ public class Player {
         this.camera = camera;
     }
 
-    public Player(float x, float y, float rotation, Camera camera) {
-        this.x = x;
-        this.y = y;
+    public float getDrawX() {
+        return x;
+    }
+
+    public float getDrawY() {
+        return (z + camera.getHeight());
+    }
+
+    public float getDrawZ() {
+        return -y;
+    }
+
+    public float getDrawRotX() {
+        return camera.getPitch() * up.x;
+    }
+
+    public float getDrawRotY() {
+        return (camera.getYaw() + rotation) * up.y;
+    }
+
+    public Player(Tile tile, Board board, float rotation, Camera camera) {
+        this.tile = tile;
+        this.board = board;
+        x = tile.getAbsCenterX();
+        y = tile.getAbsCenterY();
+        z = tile.getTopZ();
+        System.out.println(tile.getDrawOriginPosition().x + "   " + tile.getDrawOriginPosition().y + " " + tile.getDrawOriginPosition().z);
+        this.y = tile.getAbsCenterY();
         this.rotation = rotation;
         this.camera = camera;
-        eye = new Vector3f(x, y, camera.getHeight());
+
     }
 
     //translates and rotate the matrix so that it looks through the camera
     //this dose basic what gluLookAt() does
     public Matrix4f lookThrough() {
         //use inverse values because the world is transformed opposing to you
-        //roatate the pitch around the X axis
+        //pitch yaw and scale are view
+        //rotate the pitch around the X axis
         Matrix4f pitch = Matrix4f.rotate(-camera.getPitch(), 1.0f, 0.0f, 0.0f);
-        //roatate the yaw around the Y axis
+        //rotate the yaw around the Y axis
         Matrix4f yaw = Matrix4f.rotate(-(camera.getYaw() + rotation), 0.0f, 1.0f, 0.0f);
 
-        //translate to the position vector's location
-        Vector3f eye = getEye();
-        Matrix4f translate = Matrix4f.translate(eye.x, eye.y, eye.z);
-        return pitch.multiply(yaw).multiply(translate);
+        //TODO put in model matrix
+        //translate to the position vector's location, inverse translation
+        Matrix4f translate = Matrix4f.translate(-getDrawX(), -getDrawY(), -getDrawZ());
+        float ratio = getScale();
+        Matrix4f scale = Matrix4f.scale(ratio, ratio, ratio);
+        return scale.multiply(pitch.multiply(yaw).multiply(translate));
     }
 
-    public Vector3f getEye() {
-        eye.x = -x;
-        eye.y = -camera.getHeight();
-        eye.z = y;
-        return eye;
+    public float getScale() {
+        return board.rootSize / (tile.getAbsSize() * 8);
     }
 
-    public Vector3f getTarget() {
-        Vector3f eye = getEye();
-        float pitch = camera.getPitch();
-        float yaw = camera.getYaw();
-        Vector3f target = new Vector3f(
-                eye.x - (float) (Math.cos(Math.toRadians(pitch)) * Math.sin(Math.toRadians(yaw))),
-                eye.y + (float) (Math.sin(Math.toRadians(pitch))),
-                eye.z + (float) (Math.cos(Math.toRadians(pitch)) * Math.cos(Math.toRadians(yaw)))
-        );
-        return target;
-    }
     private Vector2f direction = new Vector2f();
 
     public void left() {
@@ -166,18 +187,62 @@ public class Player {
     }
 
     private void setMoveDirection(float moveAngle) {
-        direction.x = (float) Math.sin(Math.toRadians((camera.getYaw() + rotation + moveAngle)));
-        direction.y = (float) Math.cos(Math.toRadians((camera.getYaw() + rotation + moveAngle)));
+        direction.x = (float) Math.cos(Math.toRadians((camera.getYaw() + rotation + 90 + moveAngle)));
+        direction.y = (float) Math.sin(Math.toRadians((camera.getYaw() + rotation + 90 + moveAngle)));
     }
 
     private void move() {
-        x -= direction.x * movementSpeed;
-        y += direction.y * movementSpeed;
+        float scale = getScale();
+        float newX = x + direction.x * (movementSpeed / scale);
+        float newY = y + direction.y * (movementSpeed / scale);
+        System.out.println(newX + "   " + newY);
+
+        if (inTile(newX, newY)) {
+            x = (newX);
+            y = (newY);
+        }
+
+    }
+
+    private boolean inTile(float x, float y) {
+        return x > tile.getAbsX() && y < tile.getAbsY()
+                && x < tile.getAbsX() + tile.getAbsSize()
+                && y > tile.getAbsY() - tile.getAbsSize();
     }
 
     public void backward() {
-       setMoveDirection(180);
+        setMoveDirection(180);
         move();
     }
 
+    public void shoot() {
+        Matrix4f projection = board.getCurrentGame().getProjectionMatrix();
+        Matrix4f model = lookThrough();
+        Matrix4f product = projection.multiply(model);
+        Matrix4f inverse = product.inverse();
+        //the depth value you can manually go from -1 to 1 ( zNear, zFar )
+        float winZ = 0f;
+        Vector4f mouse = new Vector4f(mouseXtarget, mouseYtarget, winZ, 1);
+        Vector4f position = inverse.multiply(mouse);
+        Vector3f target = new Vector3f();
+        position.w = 1 / position.w;
+        target.x = position.x * position.w;
+        target.y = position.y * position.w;
+        target.z = position.z * position.w;
+
+        Vector3f eye = new Vector3f(0, 0, 0);
+        System.out.println(target.x + " " + target.y + " " + target.z);
+        Cube hit = board.getClosestCubeInFrontByRay(eye, target);
+        Cube newCube1 = new Cube(eye, .1f, new Vector3f(1f, 0.1f, 0.7f));
+        board.getCurrentGame().addCubeToScene(newCube1);
+
+        Cube newCube2 = new Cube(target, .1f, new Vector3f(0.5f, 0.3f, 0.2f));
+        board.getCurrentGame().addCubeToScene(newCube2);
+
+        System.out.println(hit);
+        if (hit != null) {
+            board.removeCubeFromBoard(hit);
+        }
+
+    }
 }

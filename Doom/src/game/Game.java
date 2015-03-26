@@ -48,8 +48,8 @@ public class Game {
 
     private VertexArrayObject vao;
     private VertexBufferObject vbo;
-
     private VertexBufferObject ebo;
+
     private Shader vertexShader;
     private Shader fragmentShader;
     private ShaderProgram program;
@@ -67,9 +67,7 @@ public class Game {
     public Board board;
 
     public Game() {
-        board = new Board();
-        Tile root = board.root;
-        float rootSize = root.getAbsSize();
+        board = new Board(this);
 
     }
 
@@ -124,68 +122,72 @@ public class Game {
         program.setUniform(uniModel, model);
         //draw shade plane
         switchTexture(shadePlaneTexture);
-        glDrawElements(GL_TRIANGLES, 2*Cube.getNrOfElements(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, nrOfTextureCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, 0);
         //draw board
         switchTexture(color);
-        glDrawElements(GL_TRIANGLES, (nrOfCubes)*Cube.getNrOfElements(), GL_UNSIGNED_INT,  2*Cube.getNrOfElements());
+        glDrawElements(GL_TRIANGLES, (nrOfCubes) * Cube.getNrOfElements(), GL_UNSIGNED_INT, nrOfTextureCubes * Cube.getNrOfElements());
     }
-
-    
+    private Matrix4f projectionMatrix;
     public void resolutionChanged(float width, float height) {
 
         float ratio = width / height;
 
-        Matrix4f projection = Matrix4f.perspective(90f, ratio, 0.1f, 100f);
+        projectionMatrix = Matrix4f.perspective(90f, ratio, 0.1f, 1000f);
 
         int uniProjection = program.getUniformLocation("projection");
-        program.setUniform(uniProjection, projection);
+        program.setUniform(uniProjection, projectionMatrix);
     }
     public int nrOfCubes;
 
-    public void cubesToDraw(List<Cube> cubes) {
-        nrOfCubes=cubes.size();
+    public void addCubeToScene(Cube cube) {
+        scene.add(cube);
+        bindSceneForRendering();
+    }
+
+    public void removeCubeScene(Cube cube) {
+        scene.remove(cube);
+        bindSceneForRendering();
+    }
+    private int nrOfTextureCubes;
+    public List<Cube> scene;
+
+    public void bindSceneForRendering() {
+        nrOfCubes = scene.size();
         //calculate amount of floats of all cubes
         int amountOfFloats = (nrOfCubes * Cube.getNrOfFloats());
         /* Vertex data */
 
         FloatBuffer vertices = BufferUtils.createFloatBuffer(amountOfFloats);
-        for (Cube c : cubes) {
+        for (Cube c : scene) {
             vertices.put(c.getData());
         }
         vertices.flip();
 
-        /* Generate Vertex Buffer Object */
-        vbo = new VertexBufferObject();
-        vbo.bind(GL_ARRAY_BUFFER);
         vbo.uploadData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW);
-        
+
         /* Element data */
-        IntBuffer elements = BufferUtils.createIntBuffer(Cube.getNrOfElements()*cubes.size());
-        int cubeIndex=0;
-        for (Cube c : cubes) {
+        IntBuffer elements = BufferUtils.createIntBuffer(Cube.getNrOfElements() * scene.size());
+        int cubeIndex = 0;
+        for (Cube c : scene) {
             elements.put(c.getVertexIndices(cubeIndex));
             cubeIndex++;
         }
         elements.flip();
 
-        /* Generate Element Buffer Object */
-        ebo = new VertexBufferObject();
-        ebo.bind(GL_ELEMENT_ARRAY_BUFFER);
         ebo.uploadData(GL_ELEMENT_ARRAY_BUFFER, elements, GL_STATIC_DRAW);
 
         //set amount of cubes rendered with which texture
-        
     }
     private Texture texture;
     private Texture color;
     private Texture shadePlaneTexture;
 
-    private void switchTexture(Texture tex){
-        texture=tex;
+    private void switchTexture(Texture tex) {
+        texture = tex;
         texture.bind();
-        
+
     }
-    
+
     public void enter() {
         // This line is critical for LWJGL's interoperation with GLFW's
         // OpenGL context, or any context that is managed externally.
@@ -193,7 +195,7 @@ public class Game {
         // creates the ContextCapabilities instance and makes the OpenGL
         // bindings available for use.
         GLContext.createFromCurrent();
-          /* Get width and height of framebuffer */
+        /* Get width and height of framebuffer */
         long window = GLFW.glfwGetCurrentContext();
         IntBuffer widthBuffer = BufferUtils.createIntBuffer(1);
         IntBuffer heightBuffer = BufferUtils.createIntBuffer(1);
@@ -203,22 +205,34 @@ public class Game {
 
         /* Create textures */
         color = Texture.loadTexture("resources/white.png");
-        shadePlaneTexture=Texture.loadTexture("resources/example.png");
+        shadePlaneTexture = Texture.loadTexture("resources/test.png");
         switchTexture(color);
 
         /* Generate Vertex Array Object */
         vao = new VertexArrayObject();
         vao.bind();
-
-     
+        /* Generate Vertex Buffer Object */
+        vbo = new VertexBufferObject();
+        vbo.bind(GL_ARRAY_BUFFER);
+        /* Generate Element Buffer Object */
+        ebo = new VertexBufferObject();
+        ebo.bind(GL_ELEMENT_ARRAY_BUFFER);
 
         List<Cube> cubes = new ArrayList<>();
         //add ceiling and floor 
-        cubes.add(new Cube(new Vector3f(board.root.getAbsX(), -(10f+board.root.getAbsSize()), board.root.getAbsY()), board.root.getAbsSize(), new Vector3f(1, 1, 1)));
-        cubes.add(new Cube(new Vector3f(board.root.getAbsX(), 10f, board.root.getAbsY()), board.root.getAbsSize(), new Vector3f(1, 1, 1)));
+        Vector3f boardRootOrigin = board.root.getDrawOriginPosition();
+        cubes.add(new Cube(new Vector3f(boardRootOrigin.x, boardRootOrigin.y+10, boardRootOrigin.z),board.root.getAbsSize(), new Vector3f(1, 1, 1)));
+        cubes.add(new Cube(new Vector3f(boardRootOrigin.x, boardRootOrigin.y-10,boardRootOrigin.z), board.root.getAbsSize(), new Vector3f(1, 1, 1)));
+        nrOfTextureCubes = 2;
         //add board to cubes
-        cubes.addAll(board.getBoardAsCubes());
-         cubesToDraw(cubes);
+        board.getTilesToCube().values().stream().forEach((cube) -> {
+            cubes.add(cube);
+        });
+        //set as scene scene
+        scene = cubes;
+                System.out.println(scene.size());
+
+        bindSceneForRendering();
         /* Load shaders */
         vertexShader = Shader.loadShader(GL_VERTEX_SHADER, "resources/vertex.glsl");
         fragmentShader = Shader.loadShader(GL_FRAGMENT_SHADER, "resources/fragment.glsl");
@@ -233,7 +247,6 @@ public class Game {
 
         specifyVertexAttributes();
 
-       
         /* Set texture uniform */
         int uniTex = program.getUniformLocation("texImage");
         program.setUniform(uniTex, 0);
@@ -249,13 +262,14 @@ public class Game {
 
         /* Set projection matrix to an orthographic projection */
         float ratio = width / height;
-
-        Matrix4f projection = Matrix4f.perspective(90f, ratio, 0.1f, 100f);
-
-        int uniProjection = program.getUniformLocation("projection");
-        program.setUniform(uniProjection, projection);
+        resolutionChanged(width,height);
         
+
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    }
+
+    public Matrix4f getProjectionMatrix() {
+        return projectionMatrix;
     }
 
     public void exit() {

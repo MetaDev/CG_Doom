@@ -1,6 +1,14 @@
-impelement light
-implement cube shooter
-implement board navaigatino, in tile movement tile teleportation, implement cube walking with bounds
+split matrix's in model view and projection properly
+implement board navaigatino,  teleportation,
+implement cube shooter 
+
+impelement light and reflection on board 
+
+
+
+
+
+
 
 divide camera and player transformation matrices
 

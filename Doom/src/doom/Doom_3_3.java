@@ -126,7 +126,9 @@ public class Doom_3_3 {
         glfwSetMouseButtonCallback(window, mouseCallback = new GLFWMouseButtonCallback() {
             @Override
             public void invoke(long window, int button, int action, int mods) {
-
+                if(action == GLFW_PRESS && button ==GLFW_MOUSE_BUTTON_LEFT){
+                                   game.board.player.shoot();
+                }
             }
         });
         //set resize callback

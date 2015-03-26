@@ -23,7 +23,10 @@
  */
 package math;
 
+import java.lang.reflect.Field;
 import java.nio.FloatBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.lwjgl.BufferUtils;
 
 /**
@@ -44,8 +47,9 @@ public class Matrix4f {
     public Matrix4f() {
         setIdentity();
     }
+
     public Matrix4f(float f) {
-       m00 = f;
+        m00 = f;
         m10 = f;
         m20 = f;
         m30 = f;
@@ -53,7 +57,7 @@ public class Matrix4f {
         m01 = f;
         m11 = f;
         m21 = f;
-        m31 =f;
+        m31 = f;
 
         m02 = f;
         m12 = f;
@@ -454,43 +458,155 @@ public class Matrix4f {
 
         return scaling;
     }
-    
-    public static Matrix4f lookAtMatrix(Vector3f eye, Vector3f target, Vector3f up) {
-	Vector3f zaxis = new Vector3f(
-		target.x - eye.x,
-		target.y - eye.y,
-		target.z - eye.z
-	);
-	zaxis=zaxis.normalize();
-		
-        Vector3f xaxis=up.cross(zaxis).normalize();
-	Vector3f yaxis=zaxis.cross(xaxis).normalize();
-		
 
-		
-	Matrix4f rotation = new Matrix4f();
-	rotation.m00 = xaxis.x;
-	rotation.m01 = yaxis.x;
-	rotation.m02 = zaxis.x;
-	rotation.m10 = xaxis.y;
-	rotation.m11 = yaxis.y;
-	rotation.m12 = zaxis.y;
-	rotation.m20 = xaxis.z;
-	rotation.m21 = yaxis.z;
-	rotation.m22 = zaxis.z;		
-	rotation.m33 = 1;
-		
-	Matrix4f translation = new Matrix4f();
-	translation.m00 = 1;
-	translation.m11 = 1;
-	translation.m22 = 1;
-	translation.m30 = -eye.x;
-	translation.m31 = -eye.y;
-	translation.m32 = -eye.z;
-	translation.m33 = 1;
-		
-	Matrix4f result = rotation.multiply(translation);
-	
-	return result;
-}
+    public Matrix4f inverse() {
+        float[] mat = new float[16];
+        float[] dst = new float[16];
+
+        //Copy all of the elements into the linear array
+        int k = 0;
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                mat[k++] = this.getIJ(i, j);
+            }
+        }
+
+        float[] tmp = new float[12];
+
+        /*temparrayforpairs*/
+        float src[] = new float[16];
+
+        /*arrayoftransposesourcematrix*/
+        float det;
+
+        /*determinant*/
+        /*transposematrix*/
+        for (int i = 0; i < 4; i++) //>
+        {
+            src[i] = mat[i * 4];
+            src[i + 4] = mat[i * 4 + 1];
+            src[i + 8] = mat[i * 4 + 2];
+            src[i + 12] = mat[i * 4 + 3];
+        }
+
+        /*calculatepairsforfirst8elements(cofactors)*/
+        tmp[0] = src[10] * src[15];
+        tmp[1] = src[11] * src[14];
+        tmp[2] = src[9] * src[15];
+        tmp[3] = src[11] * src[13];
+        tmp[4] = src[9] * src[14];
+        tmp[5] = src[10] * src[13];
+        tmp[6] = src[8] * src[15];
+        tmp[7] = src[11] * src[12];
+        tmp[8] = src[8] * src[14];
+        tmp[9] = src[10] * src[12];
+        tmp[10] = src[8] * src[13];
+        tmp[11] = src[9] * src[12];
+
+        /*calculatefirst8elements(cofactors)*/
+        dst[0] = tmp[0] * src[5] + tmp[3] * src[6] + tmp[4] * src[7];
+        dst[0] -= tmp[1] * src[5] + tmp[2] * src[6] + tmp[5] * src[7];
+        dst[1] = tmp[1] * src[4] + tmp[6] * src[6] + tmp[9] * src[7];
+        dst[1] -= tmp[0] * src[4] + tmp[7] * src[6] + tmp[8] * src[7];
+        dst[2] = tmp[2] * src[4] + tmp[7] * src[5] + tmp[10] * src[7];
+        dst[2] -= tmp[3] * src[4] + tmp[6] * src[5] + tmp[11] * src[7];
+        dst[3] = tmp[5] * src[4] + tmp[8] * src[5] + tmp[11] * src[6];
+        dst[3] -= tmp[4] * src[4] + tmp[9] * src[5] + tmp[10] * src[6];
+        dst[4] = tmp[1] * src[1] + tmp[2] * src[2] + tmp[5] * src[3];
+        dst[4] -= tmp[0] * src[1] + tmp[3] * src[2] + tmp[4] * src[3];
+        dst[5] = tmp[0] * src[0] + tmp[7] * src[2] + tmp[8] * src[3];
+        dst[5] -= tmp[1] * src[0] + tmp[6] * src[2] + tmp[9] * src[3];
+        dst[6] = tmp[3] * src[0] + tmp[6] * src[1] + tmp[11] * src[3];
+        dst[6] -= tmp[2] * src[0] + tmp[7] * src[1] + tmp[10] * src[3];
+        dst[7] = tmp[4] * src[0] + tmp[9] * src[1] + tmp[10] * src[2];
+        dst[7] -= tmp[5] * src[0] + tmp[8] * src[1] + tmp[11] * src[2];
+
+        /*calculatepairsforsecond8elements(cofactors)*/
+        tmp[0] = src[2] * src[7];
+        tmp[1] = src[3] * src[6];
+        tmp[2] = src[1] * src[7];
+        tmp[3] = src[3] * src[5];
+        tmp[4] = src[1] * src[6];
+        tmp[5] = src[2] * src[5];
+        tmp[6] = src[0] * src[7];
+        tmp[7] = src[3] * src[4];
+        tmp[8] = src[0] * src[6];
+        tmp[9] = src[2] * src[4];
+        tmp[10] = src[0] * src[5];
+        tmp[11] = src[1] * src[4];
+
+        /*calculatesecond8elements(cofactors)*/
+        dst[8] = tmp[0] * src[13] + tmp[3] * src[14] + tmp[4] * src[15];
+        dst[8] -= tmp[1] * src[13] + tmp[2] * src[14] + tmp[5] * src[15];
+        dst[9] = tmp[1] * src[12] + tmp[6] * src[14] + tmp[9] * src[15];
+        dst[9] -= tmp[0] * src[12] + tmp[7] * src[14] + tmp[8] * src[15];
+        dst[10] = tmp[2] * src[12] + tmp[7] * src[13] + tmp[10] * src[15];
+        dst[10] -= tmp[3] * src[12] + tmp[6] * src[13] + tmp[11] * src[15];
+        dst[11] = tmp[5] * src[12] + tmp[8] * src[13] + tmp[11] * src[14];
+        dst[11] -= tmp[4] * src[12] + tmp[9] * src[13] + tmp[10] * src[14];
+        dst[12] = tmp[2] * src[10] + tmp[5] * src[11] + tmp[1] * src[9];
+        dst[12] -= tmp[4] * src[11] + tmp[0] * src[9] + tmp[3] * src[10];
+        dst[13] = tmp[8] * src[11] + tmp[0] * src[8] + tmp[7] * src[10];
+        dst[13] -= tmp[6] * src[10] + tmp[9] * src[11] + tmp[1] * src[8];
+        dst[14] = tmp[6] * src[9] + tmp[11] * src[11] + tmp[3] * src[8];
+        dst[14] -= tmp[10] * src[11] + tmp[2] * src[8] + tmp[7] * src[9];
+        dst[15] = tmp[10] * src[10] + tmp[4] * src[8] + tmp[9] * src[9];
+        dst[15] -= tmp[8] * src[9] + tmp[11] * src[10] + tmp[5] * src[8];
+
+        /*calculatedeterminant*/
+        det = src[0] * dst[0] + src[1] * dst[1] + src[2] * dst[2] + src[3] * dst[3];
+
+        /*calculatematrixinverse*/
+        det = 1 / det;
+
+        for (int j = 0; j < 16; j++) //>
+        {
+            dst[j] *= det;
+        }
+
+        //Copy everything into the output
+        Matrix4f ret = new Matrix4f();
+        k = 0;
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                ret.setIJ(i, j, dst[k++]);
+            }
+        }
+        return ret;
+    }
+
+    public void setIJ(int i, int j, float f) {
+        try {
+            String varName = "m" + i + "" + j;
+            Field field = this.getClass().getDeclaredField(varName);
+            field.setFloat(this, f);
+        } catch (NoSuchFieldException ex) {
+            ex.printStackTrace();
+        } catch (SecurityException ex) {
+            ex.printStackTrace();
+        } catch (IllegalArgumentException ex) {
+            ex.printStackTrace();
+        } catch (IllegalAccessException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public float getIJ(int i, int j) {
+        try {
+            String varName = "m" + i + "" + j;
+            Field field = this.getClass().getDeclaredField(varName);
+            return field.getFloat(this);
+        } catch (NoSuchFieldException ex) {
+            ex.printStackTrace();
+        } catch (SecurityException ex) {
+            ex.printStackTrace();
+        } catch (IllegalArgumentException ex) {
+            ex.printStackTrace();
+        } catch (IllegalAccessException ex) {
+            ex.printStackTrace();
+        }
+        return -1;
+
+    }
+    
 }

@@ -6,6 +6,7 @@
 package game;
 
 import math.Vector3f;
+import render.Cube;
 
 /**
  *
@@ -28,12 +29,16 @@ public class Tile {
     private int j;
 
     // mothertile aka "The Board"
-    public Tile(Vector3f color, float size,float x, float y) {
+
+    public Tile(Vector3f color, float size, float x, float y) {
         this.color = color;
         this.size = size;
-       absPosX=x;
-        absPosY=y;
+        absPosX = x;
+        absPosY = y;
+
     }
+
+  
 
     // any child tile
     public Tile(Vector3f color, int i, int j, int level,
@@ -152,12 +157,20 @@ public class Tile {
     }
 
     public float getAbsCenterY() {
-        return getAbsY() + getAbsSize() / 2;
+        return getAbsY() - getAbsSize() / 2;
+    }
+
+    public float getTopZ() {
+        return getAbsSize() / 2;
+    }
+
+    public float getBottomZ() {
+        return -getAbsSize() / 2;
     }
 
     public float getAbsY() {
         if (parent != null) {
-            return getRelY() + parent.getAbsY();
+            return -getRelY() + parent.getAbsY();
         } else {
             return absPosY;
         }
@@ -172,22 +185,21 @@ public class Tile {
     }
 
     //returns top-left position of the tile
-    public Vector3f getDrawPosition() {
+    public Vector3f getDrawOriginPosition() {
         if (position == null) {
-            position = new Vector3f(getAbsX(), -getAbsSize()/2, getAbsY());
+            position = new Vector3f(getAbsX(), -getAbsSize() / 2, -getAbsY());
         }
         return position;
     }
 
+    
     // get size relative to container
-
     public float getRelSize() {
-            if (parent != null) {
-                return (parent.getRelSize() / parent.getChildFraction());
-            } else {
-                return size;
-            }
-        
+        if (parent != null) {
+            return (parent.getRelSize() / parent.getChildFraction());
+        } else {
+            return size;
+        }
 
     }
 
@@ -207,4 +219,5 @@ public class Tile {
         this.color = color;
     }
 
+    
 }
