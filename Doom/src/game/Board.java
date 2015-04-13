@@ -34,10 +34,8 @@ public class Board {
         root = new Tile(new Vector3f(1, 1, 1), rootSize, -rootSize / 2, -rootSize / 2);
         createRandomBoard();
         Tile start = getRandomTile();
-        start.setColor(new Vector3f(1f, 0, 0));
-        System.out.println(start.getDrawOriginPosition().x + " " + start.getDrawOriginPosition().y + " " + start.getDrawOriginPosition().z);
+        start.setColor(new Vector3f(1f, .5f, 0));
         player = new Player(start, this, 0, new Camera(.3f));
-        System.out.println(player.getDrawX() + " " + player.getDrawY() + " " + player.getDrawZ());
         //add all tiles to a list
         constructCubes();
     }

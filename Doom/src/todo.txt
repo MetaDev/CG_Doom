@@ -1,8 +1,9 @@
-split matrix's in model view and projection properly
 implement board navaigatino,  teleportation,
 implement cube shooter 
 
-impelement light and reflection on board 
+impelement reflection on board 
+
+make the directional light moving 
 
 
 

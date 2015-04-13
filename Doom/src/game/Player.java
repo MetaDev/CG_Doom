@@ -147,23 +147,23 @@ public class Player {
 
     }
 
-    //translates and rotate the matrix so that it looks through the camera
-    //this dose basic what gluLookAt() does
-    public Matrix4f lookThrough() {
+    
+
+    public Matrix4f getModelView() {
         //use inverse values because the world is transformed opposing to you
         //pitch yaw and scale are view
         //rotate the pitch around the X axis
         Matrix4f pitch = Matrix4f.rotate(-camera.getPitch(), 1.0f, 0.0f, 0.0f);
         //rotate the yaw around the Y axis
         Matrix4f yaw = Matrix4f.rotate(-(camera.getYaw() + rotation), 0.0f, 1.0f, 0.0f);
-
-        //TODO put in model matrix
-        //translate to the position vector's location, inverse translation
-        Matrix4f translate = Matrix4f.translate(-getDrawX(), -getDrawY(), -getDrawZ());
+        
         float ratio = getScale();
         Matrix4f scale = Matrix4f.scale(ratio, ratio, ratio);
-        return scale.multiply(pitch.multiply(yaw).multiply(translate));
+         //translate to the position vector's location, inverse translation
+        Matrix4f translate = Matrix4f.translate(-getDrawX(), -getDrawY(), -getDrawZ());
+        return scale.multiply(pitch.multiply(yaw)).multiply(translate);
     }
+
 
     public float getScale() {
         return board.rootSize / (tile.getAbsSize() * 8);
@@ -217,8 +217,7 @@ public class Player {
 
     public void shoot() {
         Matrix4f projection = board.getCurrentGame().getProjectionMatrix();
-        Matrix4f model = lookThrough();
-        Matrix4f product = projection.multiply(model);
+        Matrix4f product = projection.multiply(getModelView());
         Matrix4f inverse = product.inverse();
         //the depth value you can manually go from -1 to 1 ( zNear, zFar )
         float winZ = 0f;
@@ -234,10 +233,10 @@ public class Player {
         System.out.println(target.x + " " + target.y + " " + target.z);
         Cube hit = board.getClosestCubeInFrontByRay(eye, target);
         Cube newCube1 = new Cube(eye, .1f, new Vector3f(1f, 0.1f, 0.7f));
-        board.getCurrentGame().addCubeToScene(newCube1);
+       // board.getCurrentGame().addCubeToScene(newCube1);
 
         Cube newCube2 = new Cube(target, .1f, new Vector3f(0.5f, 0.3f, 0.2f));
-        board.getCurrentGame().addCubeToScene(newCube2);
+        //board.getCurrentGame().addCubeToScene(newCube2);
 
         System.out.println(hit);
         if (hit != null) {

@@ -35,6 +35,7 @@ import static org.lwjgl.opengl.GL11.glEnable;
 import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
+import org.lwjgl.opengl.GL20;
 import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
 import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
 import org.lwjgl.opengl.GLContext;
@@ -54,7 +55,7 @@ public class Game {
     private Shader fragmentShader;
     private ShaderProgram program;
 
-    private int uniModel;
+    private int uniModelView;
     private float previousAngle = 0f;
     private float angle = 0f;
     private final float angelPerSecond = 3f;
@@ -117,9 +118,9 @@ public class Game {
         vao.bind();
         texture.bind();
         program.use();
-
-        Matrix4f model = board.player.lookThrough();
-        program.setUniform(uniModel, model);
+        //model*view matrix
+        Matrix4f modelview = board.player.getModelView();
+        program.setUniform(uniModelView, modelview);
         //draw shade plane
         switchTexture(shadePlaneTexture);
         glDrawElements(GL_TRIANGLES, nrOfTextureCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, 0);
@@ -128,6 +129,7 @@ public class Game {
         glDrawElements(GL_TRIANGLES, (nrOfCubes) * Cube.getNrOfElements(), GL_UNSIGNED_INT, nrOfTextureCubes * Cube.getNrOfElements());
     }
     private Matrix4f projectionMatrix;
+
     public void resolutionChanged(float width, float height) {
 
         float ratio = width / height;
@@ -187,7 +189,9 @@ public class Game {
         texture.bind();
 
     }
-
+    public void movePointLight(Vector3f newPostion){
+        
+    }
     public void enter() {
         // This line is critical for LWJGL's interoperation with GLFW's
         // OpenGL context, or any context that is managed externally.
@@ -221,8 +225,8 @@ public class Game {
         List<Cube> cubes = new ArrayList<>();
         //add ceiling and floor 
         Vector3f boardRootOrigin = board.root.getDrawOriginPosition();
-        cubes.add(new Cube(new Vector3f(boardRootOrigin.x, boardRootOrigin.y+10, boardRootOrigin.z),board.root.getAbsSize(), new Vector3f(1, 1, 1)));
-        cubes.add(new Cube(new Vector3f(boardRootOrigin.x, boardRootOrigin.y-10,boardRootOrigin.z), board.root.getAbsSize(), new Vector3f(1, 1, 1)));
+        cubes.add(new Cube(new Vector3f(boardRootOrigin.x, boardRootOrigin.y + 10, boardRootOrigin.z), board.root.getAbsSize(), new Vector3f(1, 1, 1)));
+        cubes.add(new Cube(new Vector3f(boardRootOrigin.x, boardRootOrigin.y - 10, boardRootOrigin.z), board.root.getAbsSize(), new Vector3f(1, 1, 1)));
         nrOfTextureCubes = 2;
         //add board to cubes
         board.getTilesToCube().values().stream().forEach((cube) -> {
@@ -230,7 +234,7 @@ public class Game {
         });
         //set as scene scene
         scene = cubes;
-                System.out.println(scene.size());
+        System.out.println(scene.size());
 
         bindSceneForRendering();
         /* Load shaders */
@@ -252,18 +256,41 @@ public class Game {
         program.setUniform(uniTex, 0);
         /* Set model matrix to identity matrix */
         Matrix4f model = new Matrix4f();
-        uniModel = program.getUniformLocation("model");
-        program.setUniform(uniModel, model);
+        uniModelView = program.getUniformLocation("modelview");
+        program.setUniform(uniModelView, model);
 
-        /* Set view matrix to identity matrix */
-        Matrix4f view = new Matrix4f();
-        int uniView = program.getUniformLocation("view");
-        program.setUniform(uniView, view);
+      
+        /* Set mood light struct*/
+        Vector3f lightDir = new Vector3f(1, -1, 0);
+        Vector3f lightColor = new Vector3f(0, 0.2f, 0.3f);
+        float ambientlight = 0.2f;
+        int sunLightColor = program.getUniformLocation("moodLight.vertexColor");
+        int sunLightDirection = program.getUniformLocation("moodLight.vertexDirection");
+        int sunLightintensity = program.getUniformLocation("moodLight.fAmbientIntensity");
+        GL20.glUniform3f(sunLightColor, lightColor.x, lightColor.y, lightColor.z);
+        GL20.glUniform3f(sunLightDirection, lightDir.x, lightDir.y, lightDir.z);
+        GL20.glUniform1f(sunLightintensity, ambientlight);
+        
+        /* Set orb light struct*/
+        Vector3f orbLightColor = new Vector3f(0f, 0.3f, 0.3f);
+        Vector3f orbLightPosition = new Vector3f(boardRootOrigin.x, boardRootOrigin.y + 5, boardRootOrigin.z);
+        float constantAttenuation = 0.2f;
+        float linearAttenuation = 0.005f;
+        
+        int orbLightColorLoc = program.getUniformLocation("orbLight.vertexColor");
+        int orbLightPositionLoc = program.getUniformLocation("orbLight.vertexPosition");
+        int orbLightConstantAttenuationLoc = program.getUniformLocation("orbLight.fConstantAttenuation");
+        int orbLightLinearAttenuationLoc  = program.getUniformLocation("orbLight.fLinearAttenuation");
+        int orbLightAmbientIntensityLoc  = program.getUniformLocation("orbLight.fAmbientIntensity");
+        
+        GL20.glUniform3f(orbLightColorLoc, orbLightColor.x, orbLightColor.y, orbLightColor.z);
+        GL20.glUniform3f(orbLightPositionLoc, orbLightPosition.x, orbLightPosition.y, orbLightPosition.z);
+        GL20.glUniform1f(orbLightConstantAttenuationLoc, constantAttenuation);
+        GL20.glUniform1f(orbLightLinearAttenuationLoc, linearAttenuation);
+        GL20.glUniform1f(orbLightAmbientIntensityLoc, ambientlight);
 
         /* Set projection matrix to an orthographic projection */
-        float ratio = width / height;
-        resolutionChanged(width,height);
-        
+        resolutionChanged(width, height);
 
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     }
@@ -289,22 +316,31 @@ public class Game {
         /* Specify Vertex Pointer */
         int posAttrib = program.getAttributeLocation("position");
         program.enableVertexAttribute(posAttrib);
-        program.pointVertexAttribute(posAttrib, 3, 8 * Float.BYTES, 0);
+        program.pointVertexAttribute(posAttrib, 3, 11 * Float.BYTES, 0);
 
         /* Specify Color Pointer */
         int colAttrib = program.getAttributeLocation("color");
         program.enableVertexAttribute(colAttrib);
-        program.pointVertexAttribute(colAttrib, 3, 8 * Float.BYTES, 3 * Float.BYTES);
+        program.pointVertexAttribute(colAttrib, 3, 11 * Float.BYTES, 3 * Float.BYTES);
 
         /* Specify Texture Pointer */
         int texAttrib = program.getAttributeLocation("texcoord");
         program.enableVertexAttribute(texAttrib);
-        program.pointVertexAttribute(texAttrib, 2, 8 * Float.BYTES, 6 * Float.BYTES);
+        program.pointVertexAttribute(texAttrib, 2, 11 * Float.BYTES, 6 * Float.BYTES);
+        /* Specify Normal Pointer */
+        int normalAttrib = program.getAttributeLocation("normal");
+        program.enableVertexAttribute(normalAttrib);
+        program.pointVertexAttribute(normalAttrib, 3, 11 * Float.BYTES, 8 * Float.BYTES);
     }
-
+private double test;
     //continous update of the world
     public void update() {
         board.player.update(TARGET_UPS);
+        //move the point light
+        test+=0.01f;
+        Vector3f orbLightPosition = new Vector3f(board.root.getDrawOriginPosition().x+(float)Math.cos(test), board.root.getDrawOriginPosition().y + 5, board.root.getDrawOriginPosition().z+(float)Math.sin(test));
+        int orbLightPositionLoc = program.getUniformLocation("orbLight.vertexPosition");
+        GL20.glUniform3f(orbLightPositionLoc, orbLightPosition.x, orbLightPosition.y, orbLightPosition.z);
     }
 
     public void input() {
