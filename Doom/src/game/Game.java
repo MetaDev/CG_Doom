@@ -86,7 +86,7 @@ public class Game {
         enter();
         //construct player
         Tile start = board.getRandomTile();
-        player = new Player(start, playerCube, this, 0, new Camera(.3f));
+        player = new Player(start, playerCube, this, 0, new Camera(.2f));
         //add all tiles to a list
 
     }
@@ -98,7 +98,7 @@ public class Game {
         float alpha;
         while ((glfwWindowShouldClose(window) == GL_FALSE)) {
 
-            /* Get delta time and update the accumulator */
+            /* Get delta time and updateLogic the accumulator */
             delta = timer.getDelta();
             accumulator += delta;
 
@@ -116,9 +116,11 @@ public class Game {
             /* Calculate alpha value for interpolation */
             alpha = accumulator / interval;
 
-            /* Render game and update timer FPS */
+            /* Render game and updateLogic timer FPS */
             render();
             timer.updateFPS();
+            //update player render
+            player.updateRender();
 
             /* Update timer */
             timer.update();
@@ -149,12 +151,12 @@ public class Game {
 
         //draw shade  plane, textured cube
         switchTexture(shadePlaneTexture);
-        glDrawElements(GL_TRIANGLES, veoPos + nrOfTextureCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, veoPos);
+        glDrawElements(GL_TRIANGLES, nrOfTextureCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, veoPos);
         veoPos += nrOfTextureCubes * Cube.getNrOfElements();
 
         //draw board, colored cubes
         switchTexture(color);
-        glDrawElements(GL_TRIANGLES, veoPos + (nrOfCubes) * Cube.getNrOfElements(), GL_UNSIGNED_INT, veoPos);
+        glDrawElements(GL_TRIANGLES,  ((nrOfCubes) * Cube.getNrOfElements())-veoPos, GL_UNSIGNED_INT, veoPos);
 
         //draw reflection  of first n cubes last
         //flip and draw blended, no stencil buffer used
@@ -169,6 +171,10 @@ public class Game {
         glDrawElements(GL_TRIANGLES, reflectedCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, 0);
         glEnable(GL11.GL_DEPTH_TEST);
         glDisable(GL_BLEND);
+        
+        //set modelview matrix back to normal
+        program.setUniform(uniModelView, modelview);
+        glDrawElements(GL_TRIANGLES, reflectedCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, 0);
     }
     private Matrix4f projectionMatrix;
     int reflectedCubes = 0;
@@ -177,20 +183,33 @@ public class Game {
         return player.getCharCubeY();
     }
 
-    public void resolutionChanged(float width, float height) {
-
+    private void updateProjectionMatrix() {
         float ratio = width / height;
 
-        projectionMatrix = Matrix4f.perspective(90f, ratio, 0.1f, 1000f);
+        projectionMatrix = Matrix4f.perspective(90f / zoom, ratio, 0.1f, 1000f);
 
         int uniProjection = program.getUniformLocation("projection");
         program.setUniform(uniProjection, projectionMatrix);
+
+    }
+
+    public void setResolution(float width, float height) {
+        this.width = width;
+        this.height = height;
+        updateProjectionMatrix();
+    }
+    private float zoom;
+
+    public void setZoom(float zoom) {
+
+        this.zoom = zoom;
+        updateProjectionMatrix();
     }
     public int nrOfCubes;
 
     public void addCubeToScene(Cube cube) {
         //add to head
-        scene.add( cube);
+        scene.add(cube);
         bindSceneForRendering();
     }
 
@@ -259,8 +278,6 @@ public class Game {
         IntBuffer widthBuffer = BufferUtils.createIntBuffer(1);
         IntBuffer heightBuffer = BufferUtils.createIntBuffer(1);
         GLFW.glfwGetFramebufferSize(window, widthBuffer, heightBuffer);
-        int width = widthBuffer.get();
-        int height = heightBuffer.get();
 
         /* Create textures */
         color = Texture.loadTexture("resources/white.png");
@@ -348,7 +365,7 @@ public class Game {
         GL20.glUniform1f(orbLightAmbientIntensityLoc, ambientlight);
 
         /* Set projection matrix to an orthographic projection */
-        resolutionChanged(width, height);
+        setResolution(widthBuffer.get(), heightBuffer.get());
 
         //set blend paramaters
         uniAlpha = program.getUniformLocation("alpha");
@@ -358,6 +375,8 @@ public class Game {
 
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     }
+    private float width;
+    private float height;
 
     public void setOrb(Orb orb) {
         Vector3f orbLightColor = new Vector3f(0f, 0.3f, 0.3f);
@@ -375,7 +394,7 @@ public class Game {
         GL20.glUniform3f(orbLightPositionLoc, orbLightPosition.x, orbLightPosition.y, orbLightPosition.z);
         GL20.glUniform1f(orbLightConstantAttenuationLoc, constantAttenuation);
         GL20.glUniform1f(orbLightLinearAttenuationLoc, linearAttenuation);
-       // GL20.glUniform1f(orbLightAmbientIntensityLoc, ambientlight);
+        // GL20.glUniform1f(orbLightAmbientIntensityLoc, ambientlight);
     }
     private Orb orb;
 
@@ -418,9 +437,9 @@ public class Game {
     }
     private double test;
 
-    //continous update of the world
+    //continous updateLogic of the world
     public void update() {
-        player.update(TARGET_UPS);
+        player.updateLogic(TARGET_UPS);
         //orb.step();
     }
 

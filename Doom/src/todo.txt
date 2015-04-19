@@ -1,16 +1,11 @@
 
-implement board navaigatino,  teleportation,
-implement cube shooter 
-
+finish charcube (positioning )
 add randomly moving orb
 add rotating directional light
-
-scale view by tile size
 
 make rotation and movement smooth (lerp)
 
 enforce landscape (with/height>1) for window
-walk slower on bigger tiles (same crossover time)
 
 
 implement "shade planes": totaly dark. light can be made by shooting it's a ray that spans the while plane and fades over time

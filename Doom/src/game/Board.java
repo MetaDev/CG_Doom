@@ -42,7 +42,7 @@ public class Board {
 
     public void createRandomBoard() {
 
-        int iterations = 100;
+        int iterations = 400;
         Random rn = new Random();
         // the more iterations the more fractioned tiles
         int randFraction;
@@ -112,10 +112,7 @@ public class Board {
         return null;
     }
 
-    public void removeCubeFromBoard(Cube cube) {
-        cubes.remove(cube);
-        currentGame.removeCubeScene(cube);
-    }
+  
 
     public Cube getCubeOfTile(Tile tile) {
         return tilesToCube.get(tile);

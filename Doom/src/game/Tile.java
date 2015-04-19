@@ -5,6 +5,7 @@
  */
 package game;
 
+import java.util.Random;
 import math.Vector3f;
 import render.Cube;
 
@@ -48,9 +49,8 @@ public class Tile {
         this.level = level;
         this.i = i;
         this.j = j;
-        this.absPosX = getAbsX();
-        this.absPosY = getAbsY();
-        this.absSize = getAbsSize();
+        
+       
 
     }
 
@@ -96,8 +96,10 @@ public class Tile {
         for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 2; j++) {
                 float color = ((i + j) % 2) % 2;
+                Random rn = new Random();
+                //give each child a random color, between 0,1/2 for white tiles and between 1/2,1 for black tiles
                 children[i][j] = new Tile(
-                        new Vector3f(color, color, color), i, j, level + 1, this);
+                        new Vector3f((color+rn.nextFloat())/2, (color+rn.nextFloat())/2, (color+rn.nextFloat())/2), i, j, level + 1, this);
             }
         }
     }

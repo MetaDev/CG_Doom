@@ -25,7 +25,6 @@ public class Player {
     private float z;
     private float rotation;
     private Camera camera;
-    //the up vector changes the axis of the player
     private float movementSpeed = 0.1f;
     private float rotationSpeed = 50f;
     private float rotationIncrease = 0;
@@ -34,11 +33,14 @@ public class Player {
     private Cube cube;
     private Game game;
 
-    
-    public void update(int updateRate) {
-        //divide by update rate
+    public void updateLogic(int updateRate) {
+        //divide by updateLogic rate
         rotation += (rotationIncrease * rotationSpeed) / updateRate;
         rotation = rotation % 360;
+    }
+
+    public void updateRender() {
+        updateCharCube();
     }
 
     public Tile getTile() {
@@ -65,13 +67,13 @@ public class Player {
         mouseYtarget = 1 - (2 * ypos) / height;
         float boundStart = (width - height) / 2;
         float boundEnd = height + boundStart;
-        float pitch = (relY / (height / 2)) * 90;
+        float pitch = (relY / (height / 2)) * (90 / getZoom());
         setCameraPitch(pitch);
         //if in bound rotate camera
         if (xpos > boundStart && xpos < boundEnd) {
             // yaw and pitch is between -90 and 90 
             //scale with height and width
-            float yaw = (relX / (height / 2)) * 90;
+            float yaw = (relX / (height / 2)) * (90 / getZoom());
 
             setCameraYaw(yaw);
 
@@ -88,7 +90,7 @@ public class Player {
             }
             //difX interval should be -boundStart,boundStart
             //normalise
-            rotationIncrease = (difX / boundStart);
+            rotationIncrease = (difX / boundStart) / getZoom();
         }
 
     }
@@ -110,15 +112,17 @@ public class Player {
     }
 
     public float getDrawX() {
+        //move backward
         return x;
     }
 
     public float getDrawY() {
-        return (z + camera.getHeight());
+        return (z + camera.getHeight() / getZoom());
     }
 
     public float getDrawZ() {
-        return -y;
+        //move backward
+        return -(y);
     }
 
     public float getDrawRotX() {
@@ -133,7 +137,7 @@ public class Player {
 
         this.game = game;
         this.cube = cube;
-        cube.setSize(tile.getAbsSize() / 8);
+        
 
         this.rotation = rotation;
         this.camera = camera;
@@ -149,23 +153,19 @@ public class Player {
     private void updateCharCube() {
         //todo
         //draw cube in front of camera
-        cube.setPosition(new Vector3f(getDrawX() + 1, getCharCubeY(), getDrawZ()));
+        float dirx = (float) Math.cos(Math.toRadians((rotation + 90)));
+        float diry = (float) Math.sin(Math.toRadians((rotation + 90)));
+        float scale = getZoom();
+        float forward = 0.5f;
+        float newX = x + dirx * (forward / scale);
+        float newZ = y + diry * (forward / scale);
+        if (inTile(newX, newZ)) {
+            cube.setPosition(new Vector3f(newX, getCharCubeY(), -newZ));
+        } else {
+            cube.setPosition(new Vector3f(getDrawX(), getCharCubeY(), getDrawZ()));
+        }
         game.bindSceneForRendering();
-    }
 
-    public Matrix4f getModelViewMouse() {
-        //use inverse values because the world is transformed opposing to you
-        //pitch yaw and scale are view
-        //rotate the pitch around the X axis
-        Matrix4f pitch = Matrix4f.rotate(-camera.getPitch(), 1.0f, 0.0f, 0.0f);
-        //rotate the yaw around the Y axis
-        Matrix4f yaw = Matrix4f.rotate(-(camera.getYaw()), 0.0f, 1.0f, 0.0f);
-
-        float ratio = getScale();
-        Matrix4f scale = Matrix4f.scale(ratio, ratio, ratio);
-        //translate to the position vector's location, inverse translation
-        Matrix4f translate = Matrix4f.translate(-getDrawX(), -getDrawY(), -getDrawZ());
-        return scale.multiply(pitch.multiply(yaw)).multiply(translate);
     }
 
     public Matrix4f getModelView() {
@@ -176,14 +176,12 @@ public class Player {
         //rotate the yaw around the Y axis
         Matrix4f yaw = Matrix4f.rotate(-(camera.getYaw() + rotation), 0.0f, 1.0f, 0.0f);
 
-        float ratio = getScale();
-        Matrix4f scale = Matrix4f.scale(ratio, ratio, ratio);
         //translate to the position vector's location, inverse translation
         Matrix4f translate = Matrix4f.translate(-getDrawX(), -getDrawY(), -getDrawZ());
-        return scale.multiply(pitch.multiply(yaw)).multiply(translate);
+        return pitch.multiply(yaw).multiply(translate);
     }
 
-    public float getScale() {
+    public float getZoom() {
         return game.board.rootSize / (tile.getAbsSize() * 8);
     }
 
@@ -210,16 +208,14 @@ public class Player {
     }
 
     private void move() {
-        float scale = getScale();
+        float scale = getZoom();
         float newX = x + direction.x * (movementSpeed / scale);
         float newY = y + direction.y * (movementSpeed / scale);
 
         if (inTile(newX, newY)) {
-        x = (newX);
-        y = (newY);
+            x = (newX);
+            y = (newY);
         }
-        //update dran player cube
-        updateCharCube();
 
     }
 
@@ -256,12 +252,8 @@ public class Player {
         target1.y = position.y * position.w;
         target1.z = position.z * position.w;
 
-        System.out.println("target " + target.x + " " + target.y + " " + target.z);
-        System.out.println("target1 " + target1.x + " " + target1.y + " " + target1.z);
-
         Cube cubeHit = game.board.getClosestCubeInFrontByRay(target, target1);
-        
-        
+
         if (cubeHit != null) {
             Tile newTile = game.board.getTileOfCube(cubeHit);
             if (newTile != null) {
@@ -273,9 +265,10 @@ public class Player {
 
     public void setTilePosition(Tile tile) {
         this.tile = tile;
+        cube.setSize(tile.getAbsSize() / 8);
+        game.setZoom(getZoom());
         x = tile.getAbsCenterX();
         y = tile.getAbsCenterY();
         z = tile.getTopZ();
-        updateCharCube();
     }
 }

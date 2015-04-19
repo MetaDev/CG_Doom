@@ -137,7 +137,7 @@ public class Doom_3_3 {
             public void invoke(long window, int width, int height) {
                 windowWidth = width;
                 windowHeight = height;
-                game.resolutionChanged(windowWidth, windowHeight);
+                game.setResolution(windowWidth, windowHeight);
             }
         });
         // Get the resolution of the primary monitor
