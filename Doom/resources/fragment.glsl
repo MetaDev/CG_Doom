@@ -29,7 +29,7 @@ uniform DirectionalLight moodLight;
 uniform PointLight orbLight; 
 
 uniform sampler2D texImage;
-
+uniform float alpha;
 void main() {
     vec4 textureColor = texture(texImage, textureCoord);
 
@@ -48,5 +48,5 @@ void main() {
     vec4 vOrbLight = vec4(orbLight.vertexColor,1.0)*((orbLight.fAmbientIntensity+fOrbLightDiffuseIntensity)/totalAttenuation);
 
 
-    fragColor = textureColor * vec4(vertexColor, 1.0) * vMoodLight * vOrbLight;
+    fragColor = textureColor * vec4(vertexColor, alpha) * vMoodLight * vOrbLight;
 }

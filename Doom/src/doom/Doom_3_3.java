@@ -45,11 +45,11 @@ public class Doom_3_3 {
 
     public void run() {
         setNatives();
+        initWindow();
+
         game = new Game();
 
         System.out.println("Hello LWJGL " + Sys.getVersion() + "!");
-        initWindow();
-        game.enter();
         game.gameLoop(window);
 
         // Release window and window callbacks
@@ -65,7 +65,6 @@ public class Doom_3_3 {
         game.exit();
 
     }
-
 
     private void initWindow() {
         // Setup an error callback. The default implementation
@@ -102,19 +101,19 @@ public class Doom_3_3 {
                     switch (key) {
                         case GLFW_KEY_W:
                             //UP 
-                            game.board.player.forward();
+                            game.player.forward();
                             break;
                         case GLFW_KEY_S:
                             //Down
-                            game.board.player.backward();
+                            game.player.backward();
                             break;
                         case GLFW_KEY_D:
                             //RIGHT 
-                            game.board.player.right();
+                            game.player.right();
                             break;
                         case GLFW_KEY_A:
                             //left
-                            game.board.player.left();
+                            game.player.left();
                             break;
 
                     }
@@ -126,8 +125,8 @@ public class Doom_3_3 {
         glfwSetMouseButtonCallback(window, mouseCallback = new GLFWMouseButtonCallback() {
             @Override
             public void invoke(long window, int button, int action, int mods) {
-                if(action == GLFW_PRESS && button ==GLFW_MOUSE_BUTTON_LEFT){
-                                   game.board.player.shoot();
+                if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
+                    game.player.shoot();
                 }
             }
         });
@@ -136,9 +135,9 @@ public class Doom_3_3 {
 
             @Override
             public void invoke(long window, int width, int height) {
-                windowWidth=width;
-                windowHeight=height;
-                game.resolutionChanged(windowWidth,windowHeight);
+                windowWidth = width;
+                windowHeight = height;
+                game.resolutionChanged(windowWidth, windowHeight);
             }
         });
         // Get the resolution of the primary monitor
@@ -156,7 +155,7 @@ public class Doom_3_3 {
 
             @Override
             public void invoke(long window, double xpos, double ypos) {
-               game.board.player.setMousePos((float)xpos,(float) ypos, windowWidth, windowHeight);
+                game.player.setMousePos((float) xpos, (float) ypos, windowWidth, windowHeight);
 
             }
         });

@@ -67,6 +67,33 @@ public class Cube {
         return indices;
     }
 
+    public Vector3f getPos() {
+        return pos;
+    }
+
+    public float getSize() {
+        return size;
+    }
+
+    public Vector3f getColor() {
+        return color;
+    }
+
+    public void setPosition(Vector3f pos) {
+        this.pos=pos;
+        data = null;
+    }
+
+    public void setSize(float size) {
+        this.size = size;
+        data = null;
+    }
+
+    public void setColor(Vector3f color) {
+        this.color = color;
+        data = null;
+    }
+
     public float distanceWithPoint(Vector3f p) {
         return p.subtract(center).lengthSquared();
     }
@@ -87,30 +114,30 @@ public class Cube {
                 pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z, 1, 1, frontNormal.x, frontNormal.y, frontNormal.z,
                 pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z, 0, 1, frontNormal.x, frontNormal.y, frontNormal.z,
                 //top
-                pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z, 0, 0,topNormal.x, topNormal.y, topNormal.z,
+                pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z, 0, 0, topNormal.x, topNormal.y, topNormal.z,
                 pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z, 1, 0, topNormal.x, topNormal.y, topNormal.z,
                 pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z, 1, 1, topNormal.x, topNormal.y, topNormal.z,
-                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 0, 1,topNormal.x, topNormal.y, topNormal.z,
+                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 0, 1, topNormal.x, topNormal.y, topNormal.z,
                 //back
-                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 0, 0,backNormal.x, backNormal.y, backNormal.z,
-                pos.x, pos.y, pos.z, color.x, color.y, color.z, 1, 0,backNormal.x, backNormal.y, backNormal.z,
-                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 1, 1,backNormal.x, backNormal.y, backNormal.z,
-                pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z, 0, 1,backNormal.x, backNormal.y, backNormal.z,
+                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 0, 0, backNormal.x, backNormal.y, backNormal.z,
+                pos.x, pos.y, pos.z, color.x, color.y, color.z, 1, 0, backNormal.x, backNormal.y, backNormal.z,
+                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 1, 1, backNormal.x, backNormal.y, backNormal.z,
+                pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z, 0, 1, backNormal.x, backNormal.y, backNormal.z,
                 //bottom
-                pos.x, pos.y, pos.z, color.x, color.y, color.z, 0, 0,bottomNormal.x, bottomNormal.y, bottomNormal.z,
-                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 1, 0,bottomNormal.x, bottomNormal.y, bottomNormal.z,
-                pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z, 1, 1,bottomNormal.x, bottomNormal.y, bottomNormal.z,
-                pos.x, pos.y, pos.z + size, color.x, color.y, color.z, 0, 1,bottomNormal.x, bottomNormal.y, bottomNormal.z,
+                pos.x, pos.y, pos.z, color.x, color.y, color.z, 0, 0, bottomNormal.x, bottomNormal.y, bottomNormal.z,
+                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 1, 0, bottomNormal.x, bottomNormal.y, bottomNormal.z,
+                pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z, 1, 1, bottomNormal.x, bottomNormal.y, bottomNormal.z,
+                pos.x, pos.y, pos.z + size, color.x, color.y, color.z, 0, 1, bottomNormal.x, bottomNormal.y, bottomNormal.z,
                 //left
-                pos.x, pos.y, pos.z, color.x, color.y, color.z, 0, 0,leftNormal.x, leftNormal.y, leftNormal.z,
-                pos.x, pos.y, pos.z + size, color.x, color.y, color.z, 1, 0,leftNormal.x, leftNormal.y, leftNormal.z,
-                pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z, 1, 1,leftNormal.x, leftNormal.y, leftNormal.z,
-                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 0, 1,leftNormal.x, leftNormal.y, leftNormal.z,
+                pos.x, pos.y, pos.z, color.x, color.y, color.z, 0, 0, leftNormal.x, leftNormal.y, leftNormal.z,
+                pos.x, pos.y, pos.z + size, color.x, color.y, color.z, 1, 0, leftNormal.x, leftNormal.y, leftNormal.z,
+                pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z, 1, 1, leftNormal.x, leftNormal.y, leftNormal.z,
+                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 0, 1, leftNormal.x, leftNormal.y, leftNormal.z,
                 //right
-                pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z, 0, 0,rightNormal.x, rightNormal.y, rightNormal.z,
-                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 1, 0,rightNormal.x, rightNormal.y, rightNormal.z,
-                pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z, 1, 1,rightNormal.x, rightNormal.y, rightNormal.z,
-                pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z, 0, 1,rightNormal.x, rightNormal.y, rightNormal.z,};
+                pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z, 0, 0, rightNormal.x, rightNormal.y, rightNormal.z,
+                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 1, 0, rightNormal.x, rightNormal.y, rightNormal.z,
+                pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z, 1, 1, rightNormal.x, rightNormal.y, rightNormal.z,
+                pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z, 0, 1, rightNormal.x, rightNormal.y, rightNormal.z,};
         }
         return data;
     }
@@ -124,12 +151,13 @@ public class Cube {
         Vector3f topright = new Vector3f();
         float[] vertexData = getData();
 
-        int floatsPerVertx = 8;
+        int floatsPerVertx = 11;
         int vertexPerFace = 4;
+        int nrOfFaces=6;
         int topleftIndex;
         int toprightIndex;
         int bottomleftIndex;
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < nrOfFaces; i++) {
             //define the 3 vertices of a face of the cube
             topleftIndex = (i * vertexPerFace + 3) * floatsPerVertx;
             toprightIndex = (i * vertexPerFace + 2) * floatsPerVertx;

@@ -5,6 +5,7 @@
  */
 package game;
 
+import game.Light.Orb;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -23,21 +24,30 @@ import static org.lwjgl.glfw.GLFW.glfwSetWindowTitle;
 import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
 import org.lwjgl.opengl.GL11;
+import static org.lwjgl.opengl.GL11.GL_BLEND;
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_FALSE;
+import static org.lwjgl.opengl.GL11.GL_ONE;
+import static org.lwjgl.opengl.GL11.GL_ONE_MINUS_SRC_ALPHA;
+import static org.lwjgl.opengl.GL11.GL_SRC_ALPHA;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
+import static org.lwjgl.opengl.GL11.GL_ZERO;
 import static org.lwjgl.opengl.GL11.glClear;
 import static org.lwjgl.opengl.GL11.glClearColor;
+import static org.lwjgl.opengl.GL11.glDisable;
 import static org.lwjgl.opengl.GL11.glDrawElements;
 import static org.lwjgl.opengl.GL11.glEnable;
+import static org.lwjgl.opengl.GL14.GL_FUNC_ADD;
+import static org.lwjgl.opengl.GL14.glBlendFuncSeparate;
 import static org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15.GL_ELEMENT_ARRAY_BUFFER;
 import static org.lwjgl.opengl.GL15.GL_STATIC_DRAW;
 import org.lwjgl.opengl.GL20;
 import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
 import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
+import static org.lwjgl.opengl.GL20.glBlendEquationSeparate;
 import org.lwjgl.opengl.GLContext;
 import render.Cube;
 
@@ -54,8 +64,10 @@ public class Game {
     private Shader vertexShader;
     private Shader fragmentShader;
     private ShaderProgram program;
+    public Player player;
 
     private int uniModelView;
+    private int uniAlpha;
     private float previousAngle = 0f;
     private float angle = 0f;
     private final float angelPerSecond = 3f;
@@ -68,7 +80,14 @@ public class Game {
     public Board board;
 
     public Game() {
+        //create board
         board = new Board(this);
+        //init all opengl shizzle
+        enter();
+        //construct player
+        Tile start = board.getRandomTile();
+        player = new Player(start, playerCube, this, 0, new Camera(.3f));
+        //add all tiles to a list
 
     }
 
@@ -112,6 +131,7 @@ public class Game {
     }
 
     private void render() {
+        int veoPos = 0;
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //very important!! which face is hidden by other, HUH!?
         glEnable(GL11.GL_DEPTH_TEST);
@@ -119,16 +139,43 @@ public class Game {
         texture.bind();
         program.use();
         //model*view matrix
-        Matrix4f modelview = board.player.getModelView();
+        Matrix4f modelview = player.getModelView();
+
+        //set modelview matrix back to normal
         program.setUniform(uniModelView, modelview);
-        //draw shade plane
+        //draw actual cubes
+        glDrawElements(GL_TRIANGLES, reflectedCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, 0);
+        veoPos += reflectedCubes * Cube.getNrOfElements();
+
+        //draw shade  plane, textured cube
         switchTexture(shadePlaneTexture);
-        glDrawElements(GL_TRIANGLES, nrOfTextureCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, 0);
-        //draw board
+        glDrawElements(GL_TRIANGLES, veoPos + nrOfTextureCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, veoPos);
+        veoPos += nrOfTextureCubes * Cube.getNrOfElements();
+
+        //draw board, colored cubes
         switchTexture(color);
-        glDrawElements(GL_TRIANGLES, (nrOfCubes) * Cube.getNrOfElements(), GL_UNSIGNED_INT, nrOfTextureCubes * Cube.getNrOfElements());
+        glDrawElements(GL_TRIANGLES, veoPos + (nrOfCubes) * Cube.getNrOfElements(), GL_UNSIGNED_INT, veoPos);
+
+        //draw reflection  of first n cubes last
+        //flip and draw blended, no stencil buffer used
+        //flip over y plane
+        glEnable(GL_BLEND);
+        //needs seperate transform to be able to rotate around correct axis
+        //reflective plane height
+        program.setUniform(uniModelView, modelview.multiply(Matrix4f.translate(0, getReflectionSurfaceY(), 0).multiply(Matrix4f.scale(1, -1, 1).multiply(Matrix4f.translate(0, -getReflectionSurfaceY(), 0)))));
+        //show over other cubes
+        glDisable(GL11.GL_DEPTH_TEST);
+
+        glDrawElements(GL_TRIANGLES, reflectedCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, 0);
+        glEnable(GL11.GL_DEPTH_TEST);
+        glDisable(GL_BLEND);
     }
     private Matrix4f projectionMatrix;
+    int reflectedCubes = 0;
+
+    private float getReflectionSurfaceY() {
+        return player.getCharCubeY();
+    }
 
     public void resolutionChanged(float width, float height) {
 
@@ -142,7 +189,8 @@ public class Game {
     public int nrOfCubes;
 
     public void addCubeToScene(Cube cube) {
-        scene.add(cube);
+        //add to head
+        scene.add( cube);
         bindSceneForRendering();
     }
 
@@ -178,8 +226,8 @@ public class Game {
 
         ebo.uploadData(GL_ELEMENT_ARRAY_BUFFER, elements, GL_STATIC_DRAW);
 
-        //set amount of cubes rendered with which texture
     }
+
     private Texture texture;
     private Texture color;
     private Texture shadePlaneTexture;
@@ -189,9 +237,16 @@ public class Game {
         texture.bind();
 
     }
-    public void movePointLight(Vector3f newPostion){
-        
+
+    public void movePointLight(Vector3f newPostion) {
+
     }
+    private Cube playerCube;
+
+    public Cube getPlayerCube() {
+        return playerCube;
+    }
+
     public void enter() {
         // This line is critical for LWJGL's interoperation with GLFW's
         // OpenGL context, or any context that is managed externally.
@@ -223,6 +278,10 @@ public class Game {
         ebo.bind(GL_ELEMENT_ARRAY_BUFFER);
 
         List<Cube> cubes = new ArrayList<>();
+        //the first cube is the character, moves and is reflected
+        playerCube = new Cube(new Vector3f(0, 0, 0), 1, new Vector3f(1, 0, 1));
+        cubes.add(playerCube);
+        reflectedCubes = 1;
         //add ceiling and floor 
         Vector3f boardRootOrigin = board.root.getDrawOriginPosition();
         cubes.add(new Cube(new Vector3f(boardRootOrigin.x, boardRootOrigin.y + 10, boardRootOrigin.z), board.root.getAbsSize(), new Vector3f(1, 1, 1)));
@@ -259,10 +318,9 @@ public class Game {
         uniModelView = program.getUniformLocation("modelview");
         program.setUniform(uniModelView, model);
 
-      
         /* Set mood light struct*/
         Vector3f lightDir = new Vector3f(1, -1, 0);
-        Vector3f lightColor = new Vector3f(0, 0.2f, 0.3f);
+        Vector3f lightColor = new Vector3f(1, 1, 1);
         float ambientlight = 0.2f;
         int sunLightColor = program.getUniformLocation("moodLight.vertexColor");
         int sunLightDirection = program.getUniformLocation("moodLight.vertexDirection");
@@ -270,19 +328,19 @@ public class Game {
         GL20.glUniform3f(sunLightColor, lightColor.x, lightColor.y, lightColor.z);
         GL20.glUniform3f(sunLightDirection, lightDir.x, lightDir.y, lightDir.z);
         GL20.glUniform1f(sunLightintensity, ambientlight);
-        
+
         /* Set orb light struct*/
         Vector3f orbLightColor = new Vector3f(0f, 0.3f, 0.3f);
         Vector3f orbLightPosition = new Vector3f(boardRootOrigin.x, boardRootOrigin.y + 5, boardRootOrigin.z);
         float constantAttenuation = 0.2f;
-        float linearAttenuation = 0.005f;
-        
+        float linearAttenuation = 0.01f;
+
         int orbLightColorLoc = program.getUniformLocation("orbLight.vertexColor");
         int orbLightPositionLoc = program.getUniformLocation("orbLight.vertexPosition");
         int orbLightConstantAttenuationLoc = program.getUniformLocation("orbLight.fConstantAttenuation");
-        int orbLightLinearAttenuationLoc  = program.getUniformLocation("orbLight.fLinearAttenuation");
-        int orbLightAmbientIntensityLoc  = program.getUniformLocation("orbLight.fAmbientIntensity");
-        
+        int orbLightLinearAttenuationLoc = program.getUniformLocation("orbLight.fLinearAttenuation");
+        int orbLightAmbientIntensityLoc = program.getUniformLocation("orbLight.fAmbientIntensity");
+
         GL20.glUniform3f(orbLightColorLoc, orbLightColor.x, orbLightColor.y, orbLightColor.z);
         GL20.glUniform3f(orbLightPositionLoc, orbLightPosition.x, orbLightPosition.y, orbLightPosition.z);
         GL20.glUniform1f(orbLightConstantAttenuationLoc, constantAttenuation);
@@ -292,8 +350,34 @@ public class Game {
         /* Set projection matrix to an orthographic projection */
         resolutionChanged(width, height);
 
+        //set blend paramaters
+        uniAlpha = program.getUniformLocation("alpha");
+        GL20.glUniform1f(uniAlpha, 0.2f);
+        glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
+
         glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
     }
+
+    public void setOrb(Orb orb) {
+        Vector3f orbLightColor = new Vector3f(0f, 0.3f, 0.3f);
+        Vector3f orbLightPosition = orb.getPosition();
+        float constantAttenuation = 0.2f;
+        float linearAttenuation = 0.005f;
+
+        int orbLightColorLoc = program.getUniformLocation("orbLight.vertexColor");
+        int orbLightPositionLoc = program.getUniformLocation("orbLight.vertexPosition");
+        int orbLightConstantAttenuationLoc = program.getUniformLocation("orbLight.fConstantAttenuation");
+        int orbLightLinearAttenuationLoc = program.getUniformLocation("orbLight.fLinearAttenuation");
+        int orbLightAmbientIntensityLoc = program.getUniformLocation("orbLight.fAmbientIntensity");
+
+        GL20.glUniform3f(orbLightColorLoc, orbLightColor.x, orbLightColor.y, orbLightColor.z);
+        GL20.glUniform3f(orbLightPositionLoc, orbLightPosition.x, orbLightPosition.y, orbLightPosition.z);
+        GL20.glUniform1f(orbLightConstantAttenuationLoc, constantAttenuation);
+        GL20.glUniform1f(orbLightLinearAttenuationLoc, linearAttenuation);
+       // GL20.glUniform1f(orbLightAmbientIntensityLoc, ambientlight);
+    }
+    private Orb orb;
 
     public Matrix4f getProjectionMatrix() {
         return projectionMatrix;
@@ -332,15 +416,12 @@ public class Game {
         program.enableVertexAttribute(normalAttrib);
         program.pointVertexAttribute(normalAttrib, 3, 11 * Float.BYTES, 8 * Float.BYTES);
     }
-private double test;
+    private double test;
+
     //continous update of the world
     public void update() {
-        board.player.update(TARGET_UPS);
-        //move the point light
-        test+=0.01f;
-        Vector3f orbLightPosition = new Vector3f(board.root.getDrawOriginPosition().x+(float)Math.cos(test), board.root.getDrawOriginPosition().y + 5, board.root.getDrawOriginPosition().z+(float)Math.sin(test));
-        int orbLightPositionLoc = program.getUniformLocation("orbLight.vertexPosition");
-        GL20.glUniform3f(orbLightPositionLoc, orbLightPosition.x, orbLightPosition.y, orbLightPosition.z);
+        player.update(TARGET_UPS);
+        //orb.step();
     }
 
     public void input() {

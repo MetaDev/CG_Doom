@@ -5,6 +5,8 @@
  */
 package game;
 
+import java.util.ArrayList;
+import java.util.List;
 import math.Matrix4f;
 import math.Vector2f;
 import math.Vector3f;
@@ -24,18 +26,15 @@ public class Player {
     private float rotation;
     private Camera camera;
     //the up vector changes the axis of the player
-    private Vector3f up = new Vector3f(1, 1, -1);
     private float movementSpeed = 0.1f;
     private float rotationSpeed = 50f;
     private float rotationIncrease = 0;
     //tile containing the players movement
     private Tile tile;
-    private Board board;
+    private Cube cube;
+    private Game game;
 
-    public void flipUp() {
-
-    }
-
+    
     public void update(int updateRate) {
         //divide by update rate
         rotation += (rotationIncrease * rotationSpeed) / updateRate;
@@ -44,10 +43,6 @@ public class Player {
 
     public Tile getTile() {
         return tile;
-    }
-
-    public void setTile(Tile tile) {
-        this.tile = tile;
     }
 
     public float getRotation() {
@@ -127,27 +122,51 @@ public class Player {
     }
 
     public float getDrawRotX() {
-        return camera.getPitch() * up.x;
+        return camera.getPitch();
     }
 
     public float getDrawRotY() {
-        return (camera.getYaw() + rotation) * up.y;
+        return (camera.getYaw() + rotation);
     }
 
-    public Player(Tile tile, Board board, float rotation, Camera camera) {
-        this.tile = tile;
-        this.board = board;
-        x = tile.getAbsCenterX();
-        y = tile.getAbsCenterY();
-        z = tile.getTopZ();
-        System.out.println(tile.getDrawOriginPosition().x + "   " + tile.getDrawOriginPosition().y + " " + tile.getDrawOriginPosition().z);
-        this.y = tile.getAbsCenterY();
+    public Player(Tile tile, Cube cube, Game game, float rotation, Camera camera) {
+
+        this.game = game;
+        this.cube = cube;
+        cube.setSize(tile.getAbsSize() / 8);
+
         this.rotation = rotation;
         this.camera = camera;
+        setTilePosition(tile);
 
     }
 
-    
+    public float getCharCubeY() {
+        return tile.getTopZ();
+    }
+
+    //change the cube if position changes and if tile position changes
+    private void updateCharCube() {
+        //todo
+        //draw cube in front of camera
+        cube.setPosition(new Vector3f(getDrawX() + 1, getCharCubeY(), getDrawZ()));
+        game.bindSceneForRendering();
+    }
+
+    public Matrix4f getModelViewMouse() {
+        //use inverse values because the world is transformed opposing to you
+        //pitch yaw and scale are view
+        //rotate the pitch around the X axis
+        Matrix4f pitch = Matrix4f.rotate(-camera.getPitch(), 1.0f, 0.0f, 0.0f);
+        //rotate the yaw around the Y axis
+        Matrix4f yaw = Matrix4f.rotate(-(camera.getYaw()), 0.0f, 1.0f, 0.0f);
+
+        float ratio = getScale();
+        Matrix4f scale = Matrix4f.scale(ratio, ratio, ratio);
+        //translate to the position vector's location, inverse translation
+        Matrix4f translate = Matrix4f.translate(-getDrawX(), -getDrawY(), -getDrawZ());
+        return scale.multiply(pitch.multiply(yaw)).multiply(translate);
+    }
 
     public Matrix4f getModelView() {
         //use inverse values because the world is transformed opposing to you
@@ -156,17 +175,16 @@ public class Player {
         Matrix4f pitch = Matrix4f.rotate(-camera.getPitch(), 1.0f, 0.0f, 0.0f);
         //rotate the yaw around the Y axis
         Matrix4f yaw = Matrix4f.rotate(-(camera.getYaw() + rotation), 0.0f, 1.0f, 0.0f);
-        
+
         float ratio = getScale();
         Matrix4f scale = Matrix4f.scale(ratio, ratio, ratio);
-         //translate to the position vector's location, inverse translation
+        //translate to the position vector's location, inverse translation
         Matrix4f translate = Matrix4f.translate(-getDrawX(), -getDrawY(), -getDrawZ());
         return scale.multiply(pitch.multiply(yaw)).multiply(translate);
     }
 
-
     public float getScale() {
-        return board.rootSize / (tile.getAbsSize() * 8);
+        return game.board.rootSize / (tile.getAbsSize() * 8);
     }
 
     private Vector2f direction = new Vector2f();
@@ -195,12 +213,13 @@ public class Player {
         float scale = getScale();
         float newX = x + direction.x * (movementSpeed / scale);
         float newY = y + direction.y * (movementSpeed / scale);
-        System.out.println(newX + "   " + newY);
 
         if (inTile(newX, newY)) {
-            x = (newX);
-            y = (newY);
+        x = (newX);
+        y = (newY);
         }
+        //update dran player cube
+        updateCharCube();
 
     }
 
@@ -216,7 +235,7 @@ public class Player {
     }
 
     public void shoot() {
-        Matrix4f projection = board.getCurrentGame().getProjectionMatrix();
+        Matrix4f projection = game.getProjectionMatrix();
         Matrix4f product = projection.multiply(getModelView());
         Matrix4f inverse = product.inverse();
         //the depth value you can manually go from -1 to 1 ( zNear, zFar )
@@ -228,20 +247,35 @@ public class Player {
         target.x = position.x * position.w;
         target.y = position.y * position.w;
         target.z = position.z * position.w;
+        //second target point
+        mouse = new Vector4f(mouseXtarget, mouseYtarget, -0.5f, 1);
+        position = inverse.multiply(mouse);
+        Vector3f target1 = new Vector3f();
+        position.w = 1 / position.w;
+        target1.x = position.x * position.w;
+        target1.y = position.y * position.w;
+        target1.z = position.z * position.w;
 
-        Vector3f eye = new Vector3f(0, 0, 0);
-        System.out.println(target.x + " " + target.y + " " + target.z);
-        Cube hit = board.getClosestCubeInFrontByRay(eye, target);
-        Cube newCube1 = new Cube(eye, .1f, new Vector3f(1f, 0.1f, 0.7f));
-       // board.getCurrentGame().addCubeToScene(newCube1);
+        System.out.println("target " + target.x + " " + target.y + " " + target.z);
+        System.out.println("target1 " + target1.x + " " + target1.y + " " + target1.z);
 
-        Cube newCube2 = new Cube(target, .1f, new Vector3f(0.5f, 0.3f, 0.2f));
-        //board.getCurrentGame().addCubeToScene(newCube2);
-
-        System.out.println(hit);
-        if (hit != null) {
-            board.removeCubeFromBoard(hit);
+        Cube cubeHit = game.board.getClosestCubeInFrontByRay(target, target1);
+        
+        
+        if (cubeHit != null) {
+            Tile newTile = game.board.getTileOfCube(cubeHit);
+            if (newTile != null) {
+                setTilePosition(newTile);
+            }
         }
 
+    }
+
+    public void setTilePosition(Tile tile) {
+        this.tile = tile;
+        x = tile.getAbsCenterX();
+        y = tile.getAbsCenterY();
+        z = tile.getTopZ();
+        updateCharCube();
     }
 }

@@ -21,7 +21,6 @@ import render.Cube;
  */
 public class Board {
 
-    public Player player;
     public Tile root;
     public float rootSize = 10;
     private Game currentGame;
@@ -33,10 +32,7 @@ public class Board {
         //set root 50 to the left and 50 forward
         root = new Tile(new Vector3f(1, 1, 1), rootSize, -rootSize / 2, -rootSize / 2);
         createRandomBoard();
-        Tile start = getRandomTile();
-        start.setColor(new Vector3f(1f, .5f, 0));
-        player = new Player(start, this, 0, new Camera(.3f));
-        //add all tiles to a list
+
         constructCubes();
     }
 
@@ -77,10 +73,11 @@ public class Board {
         return tileIt;
     }
     private Set<Cube> cubes;
+
     public void constructCubes() {
         tilesToCube = new HashMap<>();
         recursiveBoardAsCubes(root, tilesToCube);
-        cubes=new HashSet<>(tilesToCube.values());
+        cubes = new HashSet<>(tilesToCube.values());
     }
 
     private void recursiveBoardAsCubes(Tile tile, Map<Tile, Cube> tilesToCube) {
@@ -102,24 +99,48 @@ public class Board {
         return tilesToCube;
     }
 
-    public void removeCubeFromBoard(Cube cube){
+    public Cube getRandomCube() {
+        int size = cubes.size();
+        int item = new Random().nextInt(size); // In real life, the Random object should be rather more shared than this
+        int i = 0;
+        for (Cube obj : cubes) {
+            if (i == item) {
+                return obj;
+            }
+            i = i + 1;
+        }
+        return null;
+    }
+
+    public void removeCubeFromBoard(Cube cube) {
         cubes.remove(cube);
         currentGame.removeCubeScene(cube);
     }
+
     public Cube getCubeOfTile(Tile tile) {
         return tilesToCube.get(tile);
+    }
+    public Tile getTileOfCube(Cube cube){
+        for(Map.Entry<Tile,Cube> entry:tilesToCube.entrySet()){
+            if(entry.getValue().equals(cube)){
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+    public Set<Cube> getCubes() {
+        return cubes;
     }
 
     //return the cube closest to ray1 and closer to ray 2 than ray 1 (in front of player)
     public Cube getClosestCubeInFrontByRay(Vector3f ray1, Vector3f ray2) {
-        List<Cube> cubesHit=new ArrayList<>();
+        List<Cube> cubesHit = new ArrayList<>();
         //first find all tiles intersecting with ray
-        for(Cube c: cubes){
-            if(c.intersectsWithLine(ray1, ray2)){
+        for (Cube c : cubes) {
+            if (c.intersectsWithLine(ray1, ray2)) {
                 cubesHit.add(c);
             }
         }
-        System.out.println(cubes.size());
         float tempDist = Float.MAX_VALUE;
         Cube closest = null;
         //iterate found cubes and decide which one fits the property defined above
@@ -127,7 +148,7 @@ public class Board {
             float distanceToRay1 = c.distanceWithPoint(ray1);
             float distanceToRay2 = c.distanceWithPoint(ray2);
             //if in front
-            if (distanceToRay1 > distanceToRay2 && distanceToRay1 < tempDist) {
+            if (distanceToRay1 < distanceToRay2 && distanceToRay1 < tempDist) {
                 tempDist = distanceToRay1;
                 closest = c;
             }
@@ -135,6 +156,4 @@ public class Board {
         return closest;
     }
 
-    
-    
 }
