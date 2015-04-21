@@ -22,6 +22,7 @@ struct PointLight
    float fAmbientIntensity; 
    float fConstantAttenuation;
    float fLinearAttenuation;
+    float fQuadraticAttenuation;
 }; 
 
 
@@ -44,7 +45,7 @@ void main() {
     posToOrb=normalize(posToOrb);
     float fOrbLightDiffuseIntensity = max(0.0, dot(normalize(vertexNormal), -posToOrb)); 
 
-    float totalAttenuation =orbLight.fConstantAttenuation+distToOrb*orbLight.fLinearAttenuation;
+    float totalAttenuation =orbLight.fConstantAttenuation+distToOrb*orbLight.fLinearAttenuation+orbLight.fQuadraticAttenuation*distToOrb*distToOrb;
     vec4 vOrbLight = vec4(orbLight.vertexColor,1.0)*((orbLight.fAmbientIntensity+fOrbLightDiffuseIntensity)/totalAttenuation);
 
 

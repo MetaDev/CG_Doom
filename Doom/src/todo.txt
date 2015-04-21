@@ -1,9 +1,7 @@
 
-finish charcube (positioning )
-add randomly moving orb
-add rotating directional light
-
-make rotation and movement smooth (lerp)
+finish charcube (positioning ), center of tile
+play a gif on the skybox texture 
+refactor light in seperate class
 
 enforce landscape (with/height>1) for window
 

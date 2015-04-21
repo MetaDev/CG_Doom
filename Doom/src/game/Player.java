@@ -39,10 +39,6 @@ public class Player {
         rotation = rotation % 360;
     }
 
-    public void updateRender() {
-        updateCharCube();
-    }
-
     public Tile getTile() {
         return tile;
     }
@@ -137,7 +133,6 @@ public class Player {
 
         this.game = game;
         this.cube = cube;
-        
 
         this.rotation = rotation;
         this.camera = camera;
@@ -149,24 +144,7 @@ public class Player {
         return tile.getTopZ();
     }
 
-    //change the cube if position changes and if tile position changes
-    private void updateCharCube() {
-        //todo
-        //draw cube in front of camera
-        float dirx = (float) Math.cos(Math.toRadians((rotation + 90)));
-        float diry = (float) Math.sin(Math.toRadians((rotation + 90)));
-        float scale = getZoom();
-        float forward = 0.5f;
-        float newX = x + dirx * (forward / scale);
-        float newZ = y + diry * (forward / scale);
-        if (inTile(newX, newZ)) {
-            cube.setPosition(new Vector3f(newX, getCharCubeY(), -newZ));
-        } else {
-            cube.setPosition(new Vector3f(getDrawX(), getCharCubeY(), getDrawZ()));
-        }
-        game.bindSceneForRendering();
-
-    }
+    
 
     public Matrix4f getModelView() {
         //use inverse values because the world is transformed opposing to you
@@ -265,10 +243,14 @@ public class Player {
 
     public void setTilePosition(Tile tile) {
         this.tile = tile;
-        cube.setSize(tile.getAbsSize() / 8);
         game.setZoom(getZoom());
         x = tile.getAbsCenterX();
         y = tile.getAbsCenterY();
         z = tile.getTopZ();
+        cube.setSize(tile.getAbsSize() / 8);
+
+        cube.setPosition(new Vector3f(tile.getAbsCenterX(), getCharCubeY(), -tile.getAbsCenterY()));
+        game.bindSceneForRendering();
+
     }
 }
