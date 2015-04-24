@@ -42,7 +42,7 @@ public class Board {
 
     public void createRandomBoard() {
 
-        int iterations = 400;
+        int iterations = 1000;
         Random rn = new Random();
         // the more iterations the more fractioned tiles
         int randFraction;

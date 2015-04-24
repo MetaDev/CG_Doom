@@ -48,6 +48,7 @@ void main() {
     float totalAttenuation =orbLight.fConstantAttenuation+distToOrb*orbLight.fLinearAttenuation+orbLight.fQuadraticAttenuation*distToOrb*distToOrb;
     vec4 vOrbLight = vec4(orbLight.vertexColor,1.0)*((orbLight.fAmbientIntensity+fOrbLightDiffuseIntensity)/totalAttenuation);
 
-
-    fragColor = textureColor * vec4(vertexColor, alpha) * vMoodLight * vOrbLight;
+    vec4 color = textureColor *  vec4(vertexColor,1) * vMoodLight * vOrbLight;
+    //apply alpha afterwards
+    fragColor =  color * vec4(1,1,1, alpha);
 }

@@ -53,7 +53,7 @@ import render.Cube;
 
 /**
  *
- * @author Harald
+ * @author Tim
  */
 public class Game {
 
@@ -75,8 +75,7 @@ public class Game {
      * Used for timing calculations.
      */
     protected Timer timer = new Timer();
-    public static final int TARGET_FPS = 60;
-    public static final int TARGET_UPS = 30;
+    public static final int TARGET_UPS = 60;
     public Board board;
 
     public Game() {
@@ -93,28 +92,19 @@ public class Game {
 
     public void gameLoop(long window) {
         float delta;
-        float accumulator = 0f;
-        float interval = 1f / TARGET_UPS;
-        float alpha;
+
         while ((glfwWindowShouldClose(window) == GL_FALSE)) {
 
             /* Get delta time and updateLogic the accumulator */
             delta = timer.getDelta();
-            accumulator += delta;
 
             /* Handle input */
             input();
 
-            /* Update game and timer UPS if enough time has passed */
-            while (accumulator >= interval) {
-                //fixed loop
-                update();
-                timer.updateUPS();
-                accumulator -= interval;
-            }
+            //fixed loop
+            update(delta);
+            timer.updateUPS();
 
-            /* Calculate alpha value for interpolation */
-            alpha = accumulator / interval;
 
             /* Render game and updateLogic timer FPS */
             render();
@@ -163,6 +153,7 @@ public class Game {
         //reflective plane height
         program.setUniform(uniModelView, modelview.multiply(Matrix4f.translate(0, getReflectionSurfaceY(), 0).multiply(Matrix4f.scale(1, -1, 1).multiply(Matrix4f.translate(0, -getReflectionSurfaceY(), 0)))));
         //show over other cubes
+        GL20.glUniform1f(uniAlpha, 0.2f);
         glDisable(GL11.GL_DEPTH_TEST);
         glEnable(GL_BLEND);
 
@@ -438,8 +429,8 @@ public class Game {
     private double test;
 
     //continous updateLogic of the world
-    public void update() {
-        player.updateLogic(TARGET_UPS);
+    public void update(float delta) {
+        player.updateLogic(delta);
         int orbLightPositionLoc = program.getUniformLocation("orbLight.vertexPosition");
         GL20.glUniform3f(orbLightPositionLoc, player.getDrawX(), player.getDrawY() + 1, player.getDrawZ());
 

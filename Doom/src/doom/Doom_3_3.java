@@ -19,6 +19,10 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
+/**
+ *
+ * @author Tim
+ */
 public class Doom_3_3 {
 
     // We need to strongly reference callback instances.
@@ -97,51 +101,69 @@ public class Doom_3_3 {
                 if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                     glfwSetWindowShouldClose(window, GL_TRUE); // We will detect this in our rendering loop
                 }
-                if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-                    switch (key) {
-                        case GLFW_KEY_W:
-                            //UP 
-                            game.player.forward();
-                            break;
-                        case GLFW_KEY_S:
-                            //Down
-                            game.player.backward();
-                            break;
-                        case GLFW_KEY_D:
-                            //RIGHT 
-                            game.player.right();
-                            break;
-                        case GLFW_KEY_A:
-                            //left
-                            game.player.left();
-                            break;
+                boolean on;
+                if (action == GLFW_PRESS) {
+                    on = true;
+                } else if(action == GLFW_RELEASE) {
+                    on = false;
+                }else{
+                    return;
+                }
+                switch (key) {
+                    case GLFW_KEY_W:
+                        //UP 
+                        game.player.forward(on);
+                        break;
+                    case GLFW_KEY_S:
+                        //Down
+                        game.player.backward(on);
+                        break;
+                    case GLFW_KEY_D:
+                        //RIGHT 
+                        game.player.right(on);
+                        break;
+                    case GLFW_KEY_A:
+                        //left
+                        game.player.left(on);
+                    case GLFW_KEY_SPACE:
+                        //left
+                        game.player.jump(on);
+                        break;
 
-                    }
                 }
             }
-        });
+
+        }
+        );
 
         //mouse button callback
-        glfwSetMouseButtonCallback(window, mouseCallback = new GLFWMouseButtonCallback() {
-            @Override
-            public void invoke(long window, int button, int action, int mods) {
-                if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
-                    game.player.shoot();
+        glfwSetMouseButtonCallback(window, mouseCallback
+                = new GLFWMouseButtonCallback() {
+                    @Override
+                    public void invoke(long window, int button, int action, int mods
+                    ) {
+                        if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
+                            game.player.shoot();
+                        }
+                    }
                 }
-            }
-        });
+        );
         //set resize callback
-        glfwSetWindowSizeCallback(window, windowSizeCallback = new GLFWWindowSizeCallback() {
+        glfwSetWindowSizeCallback(window, windowSizeCallback
+                = new GLFWWindowSizeCallback() {
 
-            @Override
-            public void invoke(long window, int width, int height) {
-                windowWidth = width;
-                windowHeight = height;
-                game.setResolution(windowWidth, windowHeight);
-            }
-        });
+                    @Override
+                    public void invoke(long window, int width, int height
+                    ) {
+                        windowWidth = width;
+                        windowHeight = height;
+                        game.setResolution(windowWidth, windowHeight);
+                    }
+                }
+        );
         // Get the resolution of the primary monitor
         ByteBuffer vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
         // Center our window
         glfwSetWindowPos(
                 window,
@@ -158,7 +180,8 @@ public class Doom_3_3 {
                 game.player.setMousePos((float) xpos, (float) ypos, windowWidth, windowHeight);
 
             }
-        });
+        }
+        );
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync

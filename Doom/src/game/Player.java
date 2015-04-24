@@ -25,17 +25,26 @@ public class Player {
     private float z;
     private float rotation;
     private Camera camera;
-    private float movementSpeed = 0.1f;
+    private float movementSpeed = 1f;
     private float rotationSpeed = 50f;
     private float rotationIncrease = 0;
+    private boolean movementIncrease;
     //tile containing the players movement
     private Tile tile;
     private Cube cube;
     private Game game;
 
-    public void updateLogic(int updateRate) {
+    
+    boolean jump;
+
+    public void updateLogic(float delta) {
+        rotate(delta);
+        move(delta);
+    }
+
+    private void rotate(float delta) {
         //divide by updateLogic rate
-        rotation += (rotationIncrease * rotationSpeed) / updateRate;
+        rotation += (rotationIncrease * rotationSpeed) * delta;
         rotation = rotation % 360;
     }
 
@@ -144,8 +153,6 @@ public class Player {
         return tile.getTopZ();
     }
 
-    
-
     public Matrix4f getModelView() {
         //use inverse values because the world is transformed opposing to you
         //pitch yaw and scale are view
@@ -165,34 +172,56 @@ public class Player {
 
     private Vector2f direction = new Vector2f();
 
-    public void left() {
-        setMoveDirection(90);
-        move();
+    public void left(boolean on) {
+        movementIncrease = on;
+        setMoveDirection(180);
     }
 
-    public void right() {
-        setMoveDirection(-90);
-        move();
-    }
-
-    public void forward() {
+    public void right(boolean on) {
+        movementIncrease = on;
         setMoveDirection(0);
-        move();
     }
 
-    private void setMoveDirection(float moveAngle) {
-        direction.x = (float) Math.cos(Math.toRadians((camera.getYaw() + rotation + 90 + moveAngle)));
-        direction.y = (float) Math.sin(Math.toRadians((camera.getYaw() + rotation + 90 + moveAngle)));
+    public void forward(boolean on) {
+        movementIncrease = on;
+        setMoveDirection(90);
     }
 
-    private void move() {
+    private void setMoveDirection(float angle) {
+        direction.x = (float) Math.cos(Math.toRadians((camera.getYaw() + rotation + angle)));
+        direction.y = (float) Math.sin(Math.toRadians((camera.getYaw() + rotation + angle)));
+    }
+
+    private void move(float delta) {
         float scale = getZoom();
-        float newX = x + direction.x * (movementSpeed / scale);
-        float newY = y + direction.y * (movementSpeed / scale);
+        if (movementIncrease) {
+            float newX = x + direction.x * (movementSpeed / scale) * delta;
+            float newY = y + direction.y * (movementSpeed / scale) * delta;
+            if (inTile(newX, newY)) {
+                x = (newX);
+                y = (newY);
+            }
+        } else if (jump) {
+            if (z <= tile.getTopZ() + tile.getAbsSize()) {
+                //difference with max jump hight decides speed
+                float jumpspeed = Math.max(0.05f,(tile.getAbsSize()-(z-tile.getTopZ()))/tile.getAbsSize() );
+                float newZ = z + jumpspeed *(movementSpeed / scale)* delta;
+                if (newZ <= tile.getTopZ() + tile.getAbsSize()) {
+                    z = newZ;
+                } else {
+                    jump = false;
+                    return;
+                }
+            }
 
-        if (inTile(newX, newY)) {
-            x = (newX);
-            y = (newY);
+        }
+        if (!jump) {
+            if (z > tile.getTopZ()) {
+                float newZ = z - (movementSpeed / scale) * delta;
+                if (newZ >= tile.getTopZ()) {
+                    z = newZ;
+                }
+            }
         }
 
     }
@@ -203,9 +232,13 @@ public class Player {
                 && y > tile.getAbsY() - tile.getAbsSize();
     }
 
-    public void backward() {
-        setMoveDirection(180);
-        move();
+    public void backward(boolean on) {
+        movementIncrease = on;
+        setMoveDirection(-90);
+    }
+
+    public void jump(boolean on) {
+       jump=on;
     }
 
     public void shoot() {

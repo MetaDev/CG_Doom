@@ -1,16 +1,17 @@
+random cube clouds on tiles
+gif skybox
 
-finish charcube (positioning ), center of tile
-play a gif on the skybox texture 
-refactor light in seperate class
 
 enforce landscape (with/height>1) for window
 
+
+further: gamification
 
 implement "shade planes": totaly dark. light can be made by shooting it's a ray that spans the while plane and fades over time
 the texture of the plane can be chosen by the player and can only be seen of lit up.
 
 
- only lock a player in a cube if the cube is lower than, yours
+only lock a player in a cube if the cube is lower than, yours
 the image for both shade planes can be chosen by the user-> could be tactical advantage
 let the user create it's own V8^3 (3D 8x8 matrix) as avatar, implement shooting and camera height accordingly
 increase the width of the rotation bound with increasing abs fraction of position

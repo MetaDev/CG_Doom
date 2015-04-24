@@ -11,7 +11,7 @@ import static org.lwjgl.glfw.GLFW.glfwGetCursorPos;
 
 /**
  *
- * @author Harald
+ * @author Tim
  */
 public class Mouse {
     public static void getMousePosition(long window){

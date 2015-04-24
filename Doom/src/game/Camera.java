@@ -10,7 +10,7 @@ import math.Vector3f;
 
 /**
  *
- * @author Harald
+ * @author Tim
  */
 public class Camera {
 
