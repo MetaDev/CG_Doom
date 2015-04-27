@@ -5,8 +5,6 @@
  */
 package game;
 
-import java.util.ArrayList;
-import java.util.List;
 import math.Matrix4f;
 import math.Vector2f;
 import math.Vector3f;
@@ -26,7 +24,7 @@ public class Player {
     private float rotation;
     private Camera camera;
     private float movementSpeed = 1f;
-    private float rotationSpeed = 50f;
+    private float rotationSpeed = 100f;
     private float rotationIncrease = 0;
     private boolean movementIncrease;
     //tile containing the players movement
@@ -34,7 +32,6 @@ public class Player {
     private Cube cube;
     private Game game;
 
-    
     boolean jump;
 
     public void updateLogic(float delta) {
@@ -45,7 +42,7 @@ public class Player {
     private void rotate(float delta) {
         //divide by updateLogic rate
         rotation += (rotationIncrease * rotationSpeed) * delta;
-        rotation = rotation % 360;
+        // rotation = rotation % 360;
     }
 
     public Tile getTile() {
@@ -138,13 +135,12 @@ public class Player {
         return (camera.getYaw() + rotation);
     }
 
-    public Player(Tile tile, Cube cube, Game game, float rotation, Camera camera) {
+    public Player(Tile tile, Cube cube, Game game) {
 
         this.game = game;
         this.cube = cube;
 
-        this.rotation = rotation;
-        this.camera = camera;
+        this.camera = new Camera(0.2f);
         setTilePosition(tile);
 
     }
@@ -204,8 +200,8 @@ public class Player {
         } else if (jump) {
             if (z <= tile.getTopZ() + tile.getAbsSize()) {
                 //difference with max jump hight decides speed
-                float jumpspeed = Math.max(0.05f,(tile.getAbsSize()-(z-tile.getTopZ()))/tile.getAbsSize() );
-                float newZ = z + jumpspeed *(movementSpeed / scale)* delta;
+                float jumpspeed = Math.max(0.1f, (tile.getAbsSize() - (z - tile.getTopZ())) / tile.getAbsSize());
+                float newZ = z + jumpspeed * (movementSpeed / scale) * delta;
                 if (newZ <= tile.getTopZ() + tile.getAbsSize()) {
                     z = newZ;
                 } else {
@@ -218,8 +214,10 @@ public class Player {
         if (!jump) {
             if (z > tile.getTopZ()) {
                 float newZ = z - (movementSpeed / scale) * delta;
-                if (newZ >= tile.getTopZ()) {
+                if (newZ >tile.getTopZ()) {
                     z = newZ;
+                }else{
+                    z=tile.getTopZ();
                 }
             }
         }
@@ -238,7 +236,15 @@ public class Player {
     }
 
     public void jump(boolean on) {
-       jump=on;
+        if (on && !isJumping()) {
+            jump = true;
+        }else if(!on){
+            jump =false;
+        }
+    }
+
+    private boolean isJumping() {
+        return z > tile.getTopZ();
     }
 
     public void shoot() {
@@ -280,10 +286,58 @@ public class Player {
         x = tile.getAbsCenterX();
         y = tile.getAbsCenterY();
         z = tile.getTopZ();
-        cube.setSize(tile.getAbsSize() / 8);
-
-        cube.setPosition(new Vector3f(tile.getAbsCenterX(), getCharCubeY(), -tile.getAbsCenterY()));
+        cube.setSize(tile.getAbsSize() / 16);
+        jump = false;
+        cube.setPosition(tile.getDrawCenterTopPosition());
         game.bindSceneForRendering();
 
+    }
+
+    /**
+     *
+     * @author Tim
+     */
+    private class Camera {
+
+        public float getYaw() {
+            return yaw;
+        }
+
+        public void setYaw(float yaw) {
+            this.yaw = yaw;
+        }
+
+        public float getPitch() {
+            return pitch;
+        }
+
+        public void setPitch(float pitch) {
+            this.pitch = pitch;
+        }
+        private float height;
+        //the rotation around the Y axis of the camera
+        private float yaw = 0.0F;
+        //the rotation around the X axis of the camera
+        private float pitch = 0.0F;
+
+        public Camera(float height) {
+            this.height = height;
+        }
+
+        public float getHeight() {
+            return height;
+        }
+
+        public void setHeight(float height) {
+            this.height = height;
+        }
+
+        public void pitch(float amount) {
+            pitch += amount;
+        }
+
+        public void yaw(float amount) {
+            yaw += amount;
+        }
     }
 }

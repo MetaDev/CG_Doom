@@ -23,7 +23,7 @@ import static org.lwjgl.system.MemoryUtil.*;
  *
  * @author Tim
  */
-public class Doom_3_3 {
+public class Doom {
 
     // We need to strongly reference callback instances.
     private GLFWErrorCallback errorCallback;
@@ -184,15 +184,15 @@ public class Doom_3_3 {
         );
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
-        // Enable v-sync
-        glfwSwapInterval(1);
+        // Enable v-sync, Don't it lowers performance ans is not necessary in our case
+       // glfwSwapInterval(1);
 
         // Make the window visible
         glfwShowWindow(window);
     }
 
     public static void main(String[] args) {
-        new Doom_3_3().run();
+        new Doom().run();
     }
 
 }

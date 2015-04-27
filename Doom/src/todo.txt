@@ -1,6 +1,5 @@
-random cube clouds on tiles
-gif skybox
-
+position random cubes on random tiles
+increase varaince on random board
 
 enforce landscape (with/height>1) for window
 

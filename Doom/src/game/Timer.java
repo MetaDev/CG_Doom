@@ -65,6 +65,10 @@ public class Timer {
         lastLoopTime = getTime();
     }
 
+    public int getFpsCount() {
+        return fpsCount;
+    }
+
     /**
      * Returns the time elapsed since <code>glfwInit()</code> in seconds.
      *

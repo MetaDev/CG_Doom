@@ -189,11 +189,17 @@ public class Tile {
     //returns top-left position of the tile
     public Vector3f getDrawOriginPosition() {
         if (position == null) {
-            position = new Vector3f(getAbsX(), -getAbsSize() / 2, -getAbsY());
+            position = new Vector3f(getAbsX(), getBottomZ(), -getAbsY());
         }
         return position;
     }
-
+    private Vector3f centerTopPosition;
+    public Vector3f getDrawCenterTopPosition(){
+         if (centerTopPosition == null) {
+            centerTopPosition = new Vector3f(getAbsCenterX(), getTopZ(), -getAbsCenterY());
+        }
+        return centerTopPosition;
+    }
     
     // get size relative to container
     public float getRelSize() {

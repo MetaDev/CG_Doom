@@ -5,17 +5,18 @@
  */
 package game;
 
-import game.Light.Orb;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import lwjglUtil.Shader;
 import lwjglUtil.ShaderProgram;
 import lwjglUtil.Texture;
 import lwjglUtil.VertexArrayObject;
 import lwjglUtil.VertexBufferObject;
 import math.Matrix4f;
+import math.Util;
 import math.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFW;
@@ -85,49 +86,54 @@ public class Game {
         enter();
         //construct player
         Tile start = board.getRandomTile();
-        player = new Player(start, playerCube, this, 0, new Camera(.2f));
+
+        player = new Player(start, playerCube, this);
         //add all tiles to a list
 
     }
 
     public void gameLoop(long window) {
         float delta;
-
+        timer.init();
+        int frames = 0;
         while ((glfwWindowShouldClose(window) == GL_FALSE)) {
 
             /* Get delta time and updateLogic the accumulator */
             delta = timer.getDelta();
-
             /* Handle input */
             input();
 
             //fixed loop
-            update(delta);
             timer.updateUPS();
+
+            update(delta);
 
 
             /* Render game and updateLogic timer FPS */
-            render();
             timer.updateFPS();
+            render(frames);
 
             /* Update timer */
             timer.update();
             //mandatory after render
             glfwSwapBuffers(window); // swap the color buffers
             //show FPS and UPS
-            glfwSetWindowTitle(window, "FPS: " + timer.getFPS() + " UPS: " + timer.getUPS());
-
+            glfwSetWindowTitle(window, "FPS/UPS: " + timer.getFPS());
+            
+            
+            frames++;
+            //reset frames
+            if (frames > 60 * cloudsLoopSec) {
+                frames = frames % (60 * cloudsLoopSec);
+            }
         }
     }
 
-    private void render() {
+    private void render(int frame) {
         int veoPos = 0;
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //very important!! which face is hidden by other, HUH!?
         glEnable(GL11.GL_DEPTH_TEST);
-        vao.bind();
-        texture.bind();
-        program.use();
         //model*view matrix
         Matrix4f modelview = player.getModelView();
 
@@ -138,7 +144,7 @@ public class Game {
         veoPos += reflectedCubes * Cube.getNrOfElements();
 
         //draw shade  plane, textured cube
-        switchTexture(shadePlaneTexture);
+        switchTexture(clouds.get(frame / (60 / clouds.size() * cloudsLoopSec) % clouds.size()));
         glDrawElements(GL_TRIANGLES, veoPos + nrOfTextureCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, veoPos);
         veoPos += nrOfTextureCubes * Cube.getNrOfElements();
 
@@ -153,7 +159,6 @@ public class Game {
         //reflective plane height
         program.setUniform(uniModelView, modelview.multiply(Matrix4f.translate(0, getReflectionSurfaceY(), 0).multiply(Matrix4f.scale(1, -1, 1).multiply(Matrix4f.translate(0, -getReflectionSurfaceY(), 0)))));
         //show over other cubes
-        GL20.glUniform1f(uniAlpha, 0.2f);
         glDisable(GL11.GL_DEPTH_TEST);
         glEnable(GL_BLEND);
 
@@ -179,6 +184,8 @@ public class Game {
 
         int uniProjection = program.getUniformLocation("projection");
         program.setUniform(uniProjection, projectionMatrix);
+        //also the vao has to be updated
+        vao.bind();
 
     }
 
@@ -238,7 +245,8 @@ public class Game {
 
     private Texture texture;
     private Texture color;
-    private Texture shadePlaneTexture;
+    private List<Texture> clouds;
+    private int cloudsLoopSec = 8;
 
     private void switchTexture(Texture tex) {
         texture = tex;
@@ -270,7 +278,11 @@ public class Game {
 
         /* Create textures */
         color = Texture.loadTexture("resources/white.png");
-        shadePlaneTexture = Texture.loadTexture("resources/test.png");
+        //load all clouds
+        clouds = new ArrayList<>();
+        for (int i = 0; i < 30; i++) {
+            clouds.add(Texture.loadTexture("resources/cloud/" + i + ".png"));
+        }
         switchTexture(color);
 
         /* Generate Vertex Array Object */
@@ -284,18 +296,30 @@ public class Game {
         ebo.bind(GL_ELEMENT_ARRAY_BUFFER);
 
         List<Cube> cubes = new ArrayList<>();
+        Vector3f boardRootOrigin = board.root.getDrawOriginPosition();
+
         //the first cube is the character, moves and is reflected
         playerCube = new Cube(new Vector3f(0, 0, 0), 1f, new Vector3f(1, 0, 1));
         cubes.add(playerCube);
         reflectedCubes = 1;
         //add ceiling and floor 
-        Vector3f boardRootOrigin = board.root.getDrawOriginPosition();
         cubes.add(new Cube(new Vector3f(boardRootOrigin.x, boardRootOrigin.y - board.root.getAbsSize(), boardRootOrigin.z), board.root.getAbsSize() * 2, new Vector3f(1, 1, 1)));
         nrOfTextureCubes = 1;
         //add board to cubes
         board.getTilesToCube().values().stream().forEach((cube) -> {
             cubes.add(cube);
         });
+        //add random cubeclouds to random tiles to fill the board
+        int nrOfCubeClouds = 100;
+        Random fillFactor = new Random();
+        int minLevel = 5;
+        int maxLevel = 50;
+        int minBase = 1;
+        int maxBase = 10;
+        for (int i = 0; i < nrOfCubeClouds; i++) {
+            Tile pos = board.getRandomTile();
+            cubes.addAll(CubeCloud.constructCubes(fillFactor.nextFloat(), Util.randInt(minBase, maxBase), Util.randInt(minLevel, maxLevel), pos.getAbsSize() / 4, pos.getDrawCenterTopPosition(), pos.getColor()));
+        }
         //set as scene scene
         scene = cubes;
         System.out.println(scene.size());
@@ -330,9 +354,10 @@ public class Game {
         int sunLightColor = program.getUniformLocation("moodLight.vertexColor");
         int sunLightDirection = program.getUniformLocation("moodLight.vertexDirection");
         int sunLightintensity = program.getUniformLocation("moodLight.fAmbientIntensity");
-        GL20.glUniform3f(sunLightColor, lightColor.x, lightColor.y, lightColor.z);
-        GL20.glUniform3f(sunLightDirection, lightDir.x, lightDir.y, lightDir.z);
-        GL20.glUniform1f(sunLightintensity, ambientlight);
+        /* Set texture uniform */
+        program.setUniform(sunLightColor, lightColor);
+        program.setUniform(sunLightDirection, lightDir);
+        program.setUniform(sunLightintensity, ambientlight);
 
         /* Set orb light struct*/
         Vector3f orbLightColor = new Vector3f(0.5f, 0.5f, 0.5f);
@@ -348,19 +373,19 @@ public class Game {
         int orbLightQuadraticAttenuationLoc = program.getUniformLocation("orbLight.fQuadraticAttenuation");
         int orbLightAmbientIntensityLoc = program.getUniformLocation("orbLight.fAmbientIntensity");
 
-        GL20.glUniform3f(orbLightColorLoc, orbLightColor.x, orbLightColor.y, orbLightColor.z);
-        GL20.glUniform3f(orbLightPositionLoc, orbLightPosition.x, orbLightPosition.y, orbLightPosition.z);
-        GL20.glUniform1f(orbLightConstantAttenuationLoc, constantAttenuation);
-        GL20.glUniform1f(orbLightLinearAttenuationLoc, linearAttenuation);
-        GL20.glUniform1f(orbLightQuadraticAttenuationLoc, quadraticAttenuation);
-        GL20.glUniform1f(orbLightAmbientIntensityLoc, ambientlight);
+        program.setUniform(orbLightColorLoc, orbLightColor);
+        program.setUniform(orbLightPositionLoc, orbLightPosition);
+        program.setUniform(orbLightConstantAttenuationLoc, constantAttenuation);
+        program.setUniform(orbLightLinearAttenuationLoc, linearAttenuation);
+        program.setUniform(orbLightQuadraticAttenuationLoc, quadraticAttenuation);
+        program.setUniform(orbLightAmbientIntensityLoc, ambientlight);
 
         /* Set projection matrix to an orthographic projection */
         setResolution(widthBuffer.get(), heightBuffer.get());
 
         //set blend paramaters
         uniAlpha = program.getUniformLocation("alpha");
-        GL20.glUniform1f(uniAlpha, 0.2f);
+        program.setUniform(uniAlpha, 0.2f);
         glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ZERO);
 
@@ -368,26 +393,6 @@ public class Game {
     }
     private float width;
     private float height;
-
-    public void setOrb(Orb orb) {
-        Vector3f orbLightColor = new Vector3f(0f, 0.3f, 0.3f);
-        Vector3f orbLightPosition = orb.getPosition();
-        float constantAttenuation = 0.2f;
-        float linearAttenuation = 0.005f;
-
-        int orbLightColorLoc = program.getUniformLocation("orbLight.vertexColor");
-        int orbLightPositionLoc = program.getUniformLocation("orbLight.vertexPosition");
-        int orbLightConstantAttenuationLoc = program.getUniformLocation("orbLight.fConstantAttenuation");
-        int orbLightLinearAttenuationLoc = program.getUniformLocation("orbLight.fLinearAttenuation");
-        int orbLightAmbientIntensityLoc = program.getUniformLocation("orbLight.fAmbientIntensity");
-
-        GL20.glUniform3f(orbLightColorLoc, orbLightColor.x, orbLightColor.y, orbLightColor.z);
-        GL20.glUniform3f(orbLightPositionLoc, orbLightPosition.x, orbLightPosition.y, orbLightPosition.z);
-        GL20.glUniform1f(orbLightConstantAttenuationLoc, constantAttenuation);
-        GL20.glUniform1f(orbLightLinearAttenuationLoc, linearAttenuation);
-        // GL20.glUniform1f(orbLightAmbientIntensityLoc, ambientlight);
-    }
-    private Orb orb;
 
     public Matrix4f getProjectionMatrix() {
         return projectionMatrix;
@@ -426,11 +431,11 @@ public class Game {
         program.enableVertexAttribute(normalAttrib);
         program.pointVertexAttribute(normalAttrib, 3, 11 * Float.BYTES, 8 * Float.BYTES);
     }
-    private double test;
 
     //continous updateLogic of the world
     public void update(float delta) {
         player.updateLogic(delta);
+        //positoin point light above head of the player
         int orbLightPositionLoc = program.getUniformLocation("orbLight.vertexPosition");
         GL20.glUniform3f(orbLightPositionLoc, player.getDrawX(), player.getDrawY() + 1, player.getDrawZ());
 
