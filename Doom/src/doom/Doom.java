@@ -104,9 +104,9 @@ public class Doom {
                 boolean on;
                 if (action == GLFW_PRESS) {
                     on = true;
-                } else if(action == GLFW_RELEASE) {
+                } else if (action == GLFW_RELEASE) {
                     on = false;
-                }else{
+                } else {
                     return;
                 }
                 switch (key) {
@@ -157,7 +157,9 @@ public class Doom {
                     ) {
                         windowWidth = width;
                         windowHeight = height;
-                        game.setResolution(windowWidth, windowHeight);
+                        if (game != null) {
+                            game.setResolution(windowWidth, windowHeight);
+                        }
                     }
                 }
         );
@@ -185,7 +187,7 @@ public class Doom {
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync, Don't it lowers performance ans is not necessary in our case
-       // glfwSwapInterval(1);
+        // glfwSwapInterval(1);
 
         // Make the window visible
         glfwShowWindow(window);
