@@ -34,8 +34,8 @@ public class Doom {
 
     // The window handle
     private long window;
-    public int windowWidth = 400;
-    public int windowHeight = 300;
+    public int windowWidth = 800;
+    public int windowHeight = 600;
 
     private static void setNatives() {
         if (System.getProperty("org.lwjgl.librarypath") == null) {
@@ -83,6 +83,12 @@ public class Doom {
         // Configure our window
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GL_FALSE); // the window will stay hidden after creation
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+        } else {
+            glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
+
+        }
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE); // the window will be resizable
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);

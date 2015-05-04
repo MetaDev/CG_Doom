@@ -1,3 +1,4 @@
+bug zoom can't be zero
 position random cubes on random tiles
 increase varaince on random board
 
