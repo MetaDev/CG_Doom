@@ -27,6 +27,10 @@ public class Board {
     //keep a list of tiles consisting the board for iteration convinience
     private Map<Tile, Cube> tilesToCube;
 
+    public Tile getRoot() {
+        return root;
+    }
+
     public Board(Game game) {
         currentGame = game;
         //set root 50 to the left and 50 forward

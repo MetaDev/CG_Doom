@@ -31,7 +31,6 @@ public class Player {
     private Tile tile;
     private Cube cube;
     private Game game;
-
     boolean jump;
 
     public void updateLogic(float delta) {
@@ -163,6 +162,9 @@ public class Player {
     }
 
     public float getZoom() {
+        if(Game.tutorial){
+            return 4;
+        }
         return game.board.rootSize / (tile.getAbsSize() * 8);
     }
 
@@ -214,10 +216,10 @@ public class Player {
         if (!jump) {
             if (z > tile.getTopZ()) {
                 float newZ = z - (movementSpeed / scale) * delta;
-                if (newZ >tile.getTopZ()) {
+                if (newZ > tile.getTopZ()) {
                     z = newZ;
-                }else{
-                    z=tile.getTopZ();
+                } else {
+                    z = tile.getTopZ();
                 }
             }
         }
@@ -225,6 +227,9 @@ public class Player {
     }
 
     private boolean inTile(float x, float y) {
+        if (Game.tutorial) {
+            return true;
+        }
         return x > tile.getAbsX() && y < tile.getAbsY()
                 && x < tile.getAbsX() + tile.getAbsSize()
                 && y > tile.getAbsY() - tile.getAbsSize();
@@ -238,8 +243,8 @@ public class Player {
     public void jump(boolean on) {
         if (on && !isJumping()) {
             jump = true;
-        }else if(!on){
-            jump =false;
+        } else if (!on) {
+            jump = false;
         }
     }
 

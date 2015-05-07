@@ -85,7 +85,12 @@ public class Game {
         //init all opengl shizzle
         enter();
         //construct player
-        Tile start = board.getRandomTile();
+         Tile start ;
+        if(tutorial){
+            start =board.getRandomTile();
+        }else{
+            start=board.getRandomTile();
+        }
 
         player = new Player(start, playerCube, this);
         //add all tiles to a list
@@ -119,8 +124,7 @@ public class Game {
             glfwSwapBuffers(window); // swap the color buffers
             //show FPS and UPS
             glfwSetWindowTitle(window, "FPS/UPS: " + timer.getFPS());
-            
-            
+
             frames++;
             //reset frames
             if (frames > 60 * cloudsLoopSec) {
@@ -140,6 +144,7 @@ public class Game {
         //set modelview matrix back to normal
         program.setUniform(uniModelView, modelview);
         //draw actual cubes
+        switchTexture(color);
         glDrawElements(GL_TRIANGLES, reflectedCubes * Cube.getNrOfElements(), GL_UNSIGNED_INT, 0);
         veoPos += reflectedCubes * Cube.getNrOfElements();
 
@@ -242,11 +247,13 @@ public class Game {
         ebo.uploadData(GL_ELEMENT_ARRAY_BUFFER, elements, GL_STATIC_DRAW);
 
     }
-
+ private int cloudsLoopSec = 8;
     private Texture texture;
+
+    
     private Texture color;
     private List<Texture> clouds;
-    private int cloudsLoopSec = 8;
+   
 
     private void switchTexture(Texture tex) {
         texture = tex;
@@ -262,6 +269,8 @@ public class Game {
     public Cube getPlayerCube() {
         return playerCube;
     }
+
+    public static boolean tutorial = true;
 
     public void enter() {
         // This line is critical for LWJGL's interoperation with GLFW's
@@ -297,29 +306,38 @@ public class Game {
 
         List<Cube> cubes = new ArrayList<>();
         Vector3f boardRootOrigin = board.root.getDrawOriginPosition();
-
         //the first cube is the character, moves and is reflected
         playerCube = new Cube(new Vector3f(0, 0, 0), 1f, new Vector3f(1, 0, 1));
         cubes.add(playerCube);
         reflectedCubes = 1;
-        //add ceiling and floor 
+        //add skybox
         cubes.add(new Cube(new Vector3f(boardRootOrigin.x, boardRootOrigin.y - board.root.getAbsSize(), boardRootOrigin.z), board.root.getAbsSize() * 2, new Vector3f(1, 1, 1)));
-        nrOfTextureCubes = 1;
-        //add board to cubes
-        board.getTilesToCube().values().stream().forEach((cube) -> {
-            cubes.add(cube);
-        });
-        //add random cubeclouds to random tiles to fill the board
-        int nrOfCubeClouds = 100;
-        Random fillFactor = new Random();
-        int minLevel = 5;
-        int maxLevel = 50;
-        int minBase = 1;
-        int maxBase = 10;
-        for (int i = 0; i < nrOfCubeClouds; i++) {
-            Tile pos = board.getRandomTile();
-            cubes.addAll(CubeCloud.constructCubes(fillFactor.nextFloat(), Util.randInt(minBase, maxBase), Util.randInt(minLevel, maxLevel), pos.getAbsSize() / 4, pos.getDrawCenterTopPosition(), pos.getColor()));
+        nrOfTextureCubes += 1;
+        if (!tutorial) {
+
+            //add board to cubes
+            board.getTilesToCube().values().stream().forEach((cube) -> {
+                cubes.add(cube);
+            });
+            //add random cubeclouds to random tiles to fill the board
+            int nrOfCubeClouds = 100;
+            Random fillFactor = new Random();
+            int minLevel = 5;
+            int maxLevel = 50;
+            int minBase = 1;
+            int maxBase = 10;
+            for (int i = 0; i < nrOfCubeClouds; i++) {
+                Tile pos = board.getRandomTile();
+                cubes.addAll(CubeCloud.constructCubes(fillFactor.nextFloat(), Util.randInt(minBase, maxBase), Util.randInt(minLevel, maxLevel), pos.getAbsSize() / 4, pos.getDrawCenterTopPosition(), pos.getColor()));
+            }
+        } else {
+            cubes.add(new Cube(new Vector3f(0, 0, 0), 10, new Vector3f(1, 1, 1)));
+            //first cube is rendered with thsi texture
+            color=Texture.loadTexture("resources/test.png");
+            switchTexture(color);
+
         }
+
         //set as scene scene
         scene = cubes;
         System.out.println(scene.size());

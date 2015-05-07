@@ -28,9 +28,10 @@ struct PointLight
 
 uniform DirectionalLight moodLight; 
 uniform PointLight orbLight; 
+uniform float alpha;
 
 uniform sampler2D texImage;
-uniform float alpha;
+
 void main() {
     vec4 textureColor = texture(texImage, textureCoord);
 
