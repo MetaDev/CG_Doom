@@ -307,7 +307,7 @@ public class Game {
         List<Cube> cubes = new ArrayList<>();
         Vector3f boardRootOrigin = board.root.getDrawOriginPosition();
         //the first cube is the character, moves and is reflected
-        playerCube = new Cube(new Vector3f(0, 0, 0), 1f, new Vector3f(1, 0, 1));
+        playerCube = new Cube(new Vector3f(0, 0, 0), 1f, new Vector3f(1, 1, 1));
         cubes.add(playerCube);
         reflectedCubes = 1;
         //add skybox
