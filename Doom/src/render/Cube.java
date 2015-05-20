@@ -109,35 +109,35 @@ public class Cube {
         if (data == null) {
             data = new float[]{
                 //front
-                pos.x, pos.y, pos.z + size, color.x, color.y, color.z, 0, 0, frontNormal.x, frontNormal.y, frontNormal.z,
-                pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z, 1, 0, frontNormal.x, frontNormal.y, frontNormal.z,
-                pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z, 1, 1, frontNormal.x, frontNormal.y, frontNormal.z,
-                pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z, 0, 1, frontNormal.x, frontNormal.y, frontNormal.z,
+                pos.x, pos.y, pos.z + size, color.x, color.y, color.z, 1, 1, frontNormal.x, frontNormal.y, frontNormal.z,
+                pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z, 0, 1, frontNormal.x, frontNormal.y, frontNormal.z,
+                pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z, 0, 0, frontNormal.x, frontNormal.y, frontNormal.z,
+                pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z, 1, 0, frontNormal.x, frontNormal.y, frontNormal.z,
                 //top
-                pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z, 0, 0, topNormal.x, topNormal.y, topNormal.z,
-                pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z, 1, 0, topNormal.x, topNormal.y, topNormal.z,
-                pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z, 1, 1, topNormal.x, topNormal.y, topNormal.z,
-                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 0, 1, topNormal.x, topNormal.y, topNormal.z,
+                pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z,1, 1, topNormal.x, topNormal.y, topNormal.z,
+                pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z, 0, 1, topNormal.x, topNormal.y, topNormal.z,
+                pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z, 0, 0, topNormal.x, topNormal.y, topNormal.z,
+                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 1, 0, topNormal.x, topNormal.y, topNormal.z,
                 //back
-                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 0, 0, backNormal.x, backNormal.y, backNormal.z,
-                pos.x, pos.y, pos.z, color.x, color.y, color.z, 1, 0, backNormal.x, backNormal.y, backNormal.z,
-                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 1, 1, backNormal.x, backNormal.y, backNormal.z,
-                pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z, 0, 1, backNormal.x, backNormal.y, backNormal.z,
+                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 1, 1, backNormal.x, backNormal.y, backNormal.z,
+                pos.x, pos.y, pos.z, color.x, color.y, color.z, 0, 1, backNormal.x, backNormal.y, backNormal.z,
+                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 0, 0, backNormal.x, backNormal.y, backNormal.z,
+                pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z, 1, 0, backNormal.x, backNormal.y, backNormal.z,
                 //bottom
-                pos.x, pos.y, pos.z, color.x, color.y, color.z, 0, 0, bottomNormal.x, bottomNormal.y, bottomNormal.z,
-                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 1, 0, bottomNormal.x, bottomNormal.y, bottomNormal.z,
-                pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z, 1, 1, bottomNormal.x, bottomNormal.y, bottomNormal.z,
-                pos.x, pos.y, pos.z + size, color.x, color.y, color.z, 0, 1, bottomNormal.x, bottomNormal.y, bottomNormal.z,
+                pos.x, pos.y, pos.z, color.x, color.y, color.z, 1, 1, bottomNormal.x, bottomNormal.y, bottomNormal.z,
+                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 0, 1, bottomNormal.x, bottomNormal.y, bottomNormal.z,
+                pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z, 0, 0, bottomNormal.x, bottomNormal.y, bottomNormal.z,
+                pos.x, pos.y, pos.z + size, color.x, color.y, color.z, 1, 0, bottomNormal.x, bottomNormal.y, bottomNormal.z,
                 //left
-                pos.x, pos.y, pos.z, color.x, color.y, color.z, 0, 0, leftNormal.x, leftNormal.y, leftNormal.z,
-                pos.x, pos.y, pos.z + size, color.x, color.y, color.z, 1, 0, leftNormal.x, leftNormal.y, leftNormal.z,
-                pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z, 1, 1, leftNormal.x, leftNormal.y, leftNormal.z,
-                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 0, 1, leftNormal.x, leftNormal.y, leftNormal.z,
+                pos.x, pos.y, pos.z, color.x, color.y, color.z, 1, 1, leftNormal.x, leftNormal.y, leftNormal.z,
+                pos.x, pos.y, pos.z + size, color.x, color.y, color.z, 0, 1, leftNormal.x, leftNormal.y, leftNormal.z,
+                pos.x, pos.y + size, pos.z + size, color.x, color.y, color.z, 0, 0, leftNormal.x, leftNormal.y, leftNormal.z,
+                pos.x, pos.y + size, pos.z, color.x, color.y, color.z, 1, 0, leftNormal.x, leftNormal.y, leftNormal.z,
                 //right
-                pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z, 0, 0, rightNormal.x, rightNormal.y, rightNormal.z,
-                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 1, 0, rightNormal.x, rightNormal.y, rightNormal.z,
-                pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z, 1, 1, rightNormal.x, rightNormal.y, rightNormal.z,
-                pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z, 0, 1, rightNormal.x, rightNormal.y, rightNormal.z,};
+                pos.x + size, pos.y, pos.z + size, color.x, color.y, color.z, 1, 1, rightNormal.x, rightNormal.y, rightNormal.z,
+                pos.x + size, pos.y, pos.z, color.x, color.y, color.z, 0, 1, rightNormal.x, rightNormal.y, rightNormal.z,
+                pos.x + size, pos.y + size, pos.z, color.x, color.y, color.z,0, 0, rightNormal.x, rightNormal.y, rightNormal.z,
+                pos.x + size, pos.y + size, pos.z + size, color.x, color.y, color.z, 1, 0, rightNormal.x, rightNormal.y, rightNormal.z,};
         }
         return data;
     }

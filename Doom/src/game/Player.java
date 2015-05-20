@@ -163,7 +163,7 @@ public class Player {
 
     public float getZoom() {
         if(Game.tutorial){
-            return 16;
+            return 1;
         }
         return game.board.rootSize / (tile.getAbsSize() * 8);
     }

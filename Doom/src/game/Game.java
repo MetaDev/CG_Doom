@@ -270,7 +270,7 @@ public class Game {
         return playerCube;
     }
 
-    public static boolean tutorial = true;
+    public static boolean tutorial = false;
 
     public void enter() {
         // This line is critical for LWJGL's interoperation with GLFW's
