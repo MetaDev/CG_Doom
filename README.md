@@ -5,4 +5,4 @@ The game is written with LWJGL a lightweight OpenGL wrapper for Java. It's a pro
 
 screenshot
 
-![](https://github.com/MetaDev/thesis-hypergenerator/blob/master/doc/example_output_0.png)
+![](https://github.com/MetaDev/CG_Doom/blob/har/Untitled.png)
